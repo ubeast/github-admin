@@ -70,6 +70,11 @@ def test_forks_are_not_flagged_for_contributors() -> None:
     assert "no external contributors" not in result.issues
 
 
+def test_forks_are_not_flagged_for_missing_ci_config() -> None:
+    result = health.check(_repo(has_ci_config=False, is_fork=True), today=date(2024, 2, 1))
+    assert "no CI config" not in result.issues
+
+
 def test_unknown_contributor_count_not_flagged() -> None:
     result = health.check(_repo(contributors=None), today=date(2024, 2, 1))
     assert "no external contributors" not in result.issues

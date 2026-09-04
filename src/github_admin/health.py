@@ -45,8 +45,9 @@ def check(repo: RepoInfo, *, stale_days: int = DEFAULT_STALE_DAYS, today: date |
     """Evaluate one repo against the standard health checks.
 
     Archived and forked repos are informational only -- their emptiness in
-    other fields (README, license, contributors) isn't flagged, since an
-    archived repo won't be improved and a fork inherits the upstream's docs.
+    other fields (README, license, contributors, CI config) isn't flagged,
+    since an archived repo won't be improved and a fork inherits the
+    upstream's docs and workflows.
     """
     issues: list[str] = []
     if repo.archived:
@@ -68,15 +69,10 @@ def check(repo: RepoInfo, *, stale_days: int = DEFAULT_STALE_DAYS, today: date |
         issues.append("no .gitignore")
     if not repo.has_tests_dir:
         issues.append("no tests directory")
-    # OPEN QUESTION (flagged 2026-09, not yet resolved): this fires for
-    # every non-archived repo, including forks and tutorial/demo repos
-    # where you never chose to set up CI for someone else's code or where
-    # there's nothing meaningfully continuous to test. The contributors
-    # check already exempts forks for the analogous reason -- CI arguably
-    # deserves the same exemption, but that decision was deliberately
-    # deferred rather than made here. Revisit before treating "no CI
-    # config" as a strong signal across the whole portfolio.
-    if not repo.has_ci_config:
+    # Forks are exempt, same reasoning as the contributors check above: you
+    # didn't choose to set up CI for someone else's code, so its absence on
+    # a fork isn't a signal about you.
+    if not repo.has_ci_config and not repo.is_fork:
         issues.append("no CI config")
     if repo.language == "Python" and not repo.has_pyproject:
         issues.append("no pyproject.toml")

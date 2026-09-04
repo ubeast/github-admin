@@ -67,17 +67,19 @@ and the check list.
   value_fn)`. Add a check there and the legend, filter chips, table column
   (or checklist box), and sort key all pick it up -- no other file to touch
   unless it needs a genuinely new visual treatment.
+- **The "no CI config" check exempts forks** (2026-09), same reasoning as
+  the contributors check: you didn't choose to set up CI for someone else's
+  code, so its absence on a fork isn't a signal about you.
 
 ## Open questions
 
-- **Should the "no CI config" check exempt forks (and maybe tutorial/demo
-  repos)?** Right now it fires for every non-archived repo, same as most
-  other checks. The *contributors* check already exempts forks ("a fork
-  inherits the upstream's docs") -- CI arguably deserves the same
-  treatment, since you didn't choose to set up CI for someone else's code,
-  and a single-notebook tutorial repo has nothing continuous to test.
-  Deliberately not decided yet (2026-09) -- see the comment at the check in
-  `health.py`.
+- **Should "no CI config" also exempt tutorial/demo repos** (e.g. a
+  single-notebook repo with nothing continuous to test)? There's no clean
+  API field for "this is a tutorial repo" -- it'd have to be inferred from
+  heuristics (file count, commit count, etc.), which is fuzzier than the
+  `is_fork` boolean used for the fork exemption above. Deliberately not
+  built until real usage shows the plain check is too noisy for repos like
+  that.
 
 ## Layout
 
