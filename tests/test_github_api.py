@@ -51,9 +51,66 @@ def test_resolve_token_none_when_no_token_and_no_gh(monkeypatch: pytest.MonkeyPa
     assert github_api.resolve_token() is None
 
 
+def test_root_listing_splits_files_and_dirs(monkeypatch: pytest.MonkeyPatch) -> None:
+    entries = [
+        {"name": "README.md", "type": "file"},
+        {"name": "CLAUDE.md", "type": "file"},
+        {"name": ".gitignore", "type": "file"},
+        {"name": "pyproject.toml", "type": "file"},
+        {"name": "src", "type": "dir"},
+        {"name": "tests", "type": "dir"},
+        {"name": ".github", "type": "dir"},
+    ]
+    monkeypatch.setattr(github_api, "_get_json", lambda url, headers: (entries, {}))
+    files, dirs = github_api._root_listing("octocat/widget", headers={})
+    assert files == {"readme.md", "claude.md", ".gitignore", "pyproject.toml"}
+    assert dirs == {"src", "tests", ".github"}
+
+
+def test_root_listing_empty_on_api_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    def _raise(url: str, headers: dict[str, str]) -> None:
+        raise github_api.ApiError("404")
+
+    monkeypatch.setattr(github_api, "_get_json", _raise)
+    files, dirs = github_api._root_listing("octocat/widget", headers={})
+    assert files == set()
+    assert dirs == set()
+
+
+def test_branch_protection_false_on_404(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(github_api, "_request", lambda url, headers: (404, {}, b""))
+    assert github_api._branch_protection("octocat/widget", "main", headers={}) is False
+
+
+def test_branch_protection_unknown_on_403(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(github_api, "_request", lambda url, headers: (403, {}, b""))
+    assert github_api._branch_protection("octocat/widget", "main", headers={}) is None
+
+
+def test_branch_protection_true_when_force_push_and_deletion_blocked(monkeypatch: pytest.MonkeyPatch) -> None:
+    body = b'{"allow_force_pushes": {"enabled": false}, "allow_deletions": {"enabled": false}}'
+    monkeypatch.setattr(github_api, "_request", lambda url, headers: (200, {}, body))
+    assert github_api._branch_protection("octocat/widget", "main", headers={}) is True
+
+
+def test_branch_protection_false_when_force_push_allowed(monkeypatch: pytest.MonkeyPatch) -> None:
+    body = b'{"allow_force_pushes": {"enabled": true}, "allow_deletions": {"enabled": false}}'
+    monkeypatch.setattr(github_api, "_request", lambda url, headers: (200, {}, body))
+    assert github_api._branch_protection("octocat/widget", "main", headers={}) is False
+
+
+def test_branch_protection_none_without_branch_name() -> None:
+    assert github_api._branch_protection("octocat/widget", "", headers={}) is None
+
+
 def test_to_repo_info_maps_fields(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(github_api, "_has_readme", lambda full_name, headers: True)
+    monkeypatch.setattr(
+        github_api,
+        "_root_listing",
+        lambda full_name, headers: ({"readme.md", "claude.md", "pyproject.toml"}, {"src"}),
+    )
     monkeypatch.setattr(github_api, "_contributor_count", lambda full_name, headers: 3)
+    monkeypatch.setattr(github_api, "_branch_protection", lambda full_name, branch, headers: True)
 
     raw = {
         "name": "widget",
@@ -79,7 +136,13 @@ def test_to_repo_info_maps_fields(monkeypatch: pytest.MonkeyPatch) -> None:
     assert rec.owner == "octocat"
     assert rec.full_name == "octocat/widget"
     assert rec.license == "MIT"
+    assert rec.language == "Python"
     assert rec.has_readme is True
+    assert rec.has_claude_md is True
+    assert rec.has_src_layout is True
+    assert rec.has_tests_dir is False
+    assert rec.has_pyproject is True
+    assert rec.branch_protected is True
     assert rec.contributors == 3
     assert rec.stars == 12
     assert rec.created == "2020-01-02"

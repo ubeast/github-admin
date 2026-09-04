@@ -54,6 +54,8 @@ def check(repo: RepoInfo, *, stale_days: int = DEFAULT_STALE_DAYS, today: date |
 
     if not repo.has_readme:
         issues.append("no README")
+    if not repo.has_claude_md:
+        issues.append("no CLAUDE.md")
     if not repo.license:
         issues.append("no license")
     if repo.contributors is not None and repo.contributors <= 1 and not repo.is_fork:
@@ -62,8 +64,24 @@ def check(repo: RepoInfo, *, stale_days: int = DEFAULT_STALE_DAYS, today: date |
         issues.append("no description")
     if not repo.topics:
         issues.append("no topics")
+    if not repo.has_gitignore:
+        issues.append("no .gitignore")
+    if not repo.has_tests_dir:
+        issues.append("no tests directory")
+    if not repo.has_ci_config:
+        issues.append("no CI config")
+    if repo.language == "Python" and not repo.has_pyproject:
+        issues.append("no pyproject.toml")
+    if repo.branch_protected is False:
+        issues.append("main branch not protected")
     if _is_stale(repo.pushed, stale_days, today or date.today()):
         issues.append(f"stale (no push in {stale_days}+ days)")
+
+    # has_src_layout is deliberately NOT flagged here: it's a real, useful
+    # signal (surfaced in the renderers), but "should this repo use a src/
+    # layout" depends on project shape in a way the others don't -- a
+    # single-file tool repo (see one-file-tools' own CLAUDE.md) correctly
+    # skips it on purpose. Treat it as something to eyeball, not enforce.
 
     return RepoHealth(repo=repo, issues=issues)
 

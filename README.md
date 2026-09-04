@@ -1,8 +1,9 @@
 # github-admin
 
 Consolidates every GitHub repo you can see into a single health-check view, so
-you can spot what's missing (README, license, contributors, description,
-topics, staleness) without clicking through each repo individually.
+you can spot what's missing (README, CLAUDE.md, branch protection, license,
+contributors, description, topics, project structure, staleness) without
+clicking through each repo individually.
 
 ```bash
 $ github-admin
@@ -16,12 +17,33 @@ browser-viewable copy.
 
 | check | flagged when |
 | --- | --- |
-| README | repo has no `README` at the default branch root |
+| README | repo has no `README*` at the root |
+| CLAUDE.md | repo has no `CLAUDE.md` at the root |
+| main branch protected | force pushes or branch deletion are allowed on the default branch (see below) |
 | license | GitHub doesn't detect a license |
 | contributors | only the owner has ever committed (forks are exempt) |
 | description | the repo description is empty |
 | topics | no topics are set |
+| .gitignore | repo has no `.gitignore` at the root |
+| tests directory | repo has no `tests/` or `test/` at the root |
+| CI config | repo has no `.github/` at the root |
+| pyproject.toml | **Python repos only** -- no `pyproject.toml` at the root |
 | stale | no push in `--stale-days` days (default 180) |
+
+`src/` layout is detected (`--html` shows it as a column) but never counted
+as an issue -- whether a repo should use one depends on its shape (a
+deliberate single-file tool, like this project's own source `one-file-tools`,
+correctly skips it), which isn't something to auto-enforce.
+
+**"Protected" is a specific, minimal bar**, not "any protection rule
+exists": branch protection is on, and both force-push and branch deletion
+are disallowed for the default branch. It deliberately does not require PR
+review counts or passing status checks -- reasonable for a team, not for
+solo work, and this tool covers both. Also: GitHub's branch-protection API
+is a **paid-plan feature for private repos** -- it 403s with "Upgrade to
+GitHub Pro" regardless of your token's permissions, so most private repos on
+a free plan will show `?` (unknown) here rather than a real answer. Public
+repos always get a definitive answer.
 
 Archived repos are shown but never flagged -- an archived repo won't be
 improved, so there's no point calling out what it's missing.

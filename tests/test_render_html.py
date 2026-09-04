@@ -16,6 +16,13 @@ def _repo(**overrides: object) -> RepoInfo:
         archived=False,
         license="",
         has_readme=False,
+        has_claude_md=False,
+        has_src_layout=False,
+        has_tests_dir=False,
+        has_gitignore=False,
+        has_ci_config=False,
+        has_pyproject=False,
+        branch_protected=None,
         contributors=1,
         topics=[],
         stars=0,
@@ -48,7 +55,14 @@ def test_render_html_escapes_html_in_fields() -> None:
 
 
 def test_render_html_marks_healthy_repos_ok() -> None:
-    r = _repo(has_readme=True, license="MIT", topics=["cli"], description="x")
+    r = _repo(has_readme=True, has_claude_md=True, license="MIT", topics=["cli"], description="x")
     result = RepoHealth(repo=r, issues=[])
     out = render_html.render([result])
     assert ">ok<" in out
+
+
+def test_render_html_shows_unknown_branch_protection() -> None:
+    r = _repo(branch_protected=None)
+    result = RepoHealth(repo=r, issues=[])
+    out = render_html.render([result])
+    assert 'class="unknown">?<' in out

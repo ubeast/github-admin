@@ -11,10 +11,17 @@ __all__ = ["render"]
 
 _CHECK = "[green]✓[/green]"
 _CROSS = "[red]✗[/red]"
+_UNKNOWN = "[dim]?[/dim]"
 
 
 def _flag(ok: bool) -> str:
     return _CHECK if ok else _CROSS
+
+
+def _flag_tri(ok: bool | None) -> str:
+    if ok is None:
+        return _UNKNOWN
+    return _flag(ok)
 
 
 def render(results: list[RepoHealth], console: Console | None = None) -> None:
@@ -36,6 +43,8 @@ def render(results: list[RepoHealth], console: Console | None = None) -> None:
     # report, which has room for it.
     table.add_column("repo", no_wrap=True, min_width=22, max_width=40)
     table.add_column("readme", justify="center", min_width=6)
+    table.add_column("claude.md", justify="center", min_width=9)
+    table.add_column("protected", justify="center", min_width=9)
     table.add_column("license", justify="center", min_width=7)
     table.add_column("contrib", justify="right", min_width=7)
     table.add_column("forks", justify="right", min_width=5)
@@ -58,6 +67,8 @@ def render(results: list[RepoHealth], console: Console | None = None) -> None:
         table.add_row(
             name,
             _flag(r.has_readme),
+            _flag(r.has_claude_md),
+            _flag_tri(r.branch_protected),
             _flag(bool(r.license)),
             contributors,
             str(r.forks),

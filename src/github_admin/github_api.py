@@ -2,15 +2,18 @@
 
 Standard-library only (``urllib``) -- no HTTP client dependency. Adapted from
 the ``fetch_github`` logic in ``one-file-tools/tools/repo-inventory/repo_inventory.py``,
-narrowed to GitHub only and to the fields this tool's health checks need
-(``has_readme`` and ``contributors`` are always fetched -- they're the point
-of this tool, unlike the source script where they're opt-in via ``--full``).
+narrowed to GitHub only and to the fields this tool's health checks need.
+Unlike the source script (where the analogous fields are opt-in via
+``--full``), those fields are always fetched here -- they're the point of
+this tool.
 
-Speed tradeoff: fetching ``has_readme`` and ``contributors`` costs two extra
-requests per repo beyond the single list-endpoint call. For ~50 repos that's
-~100 requests, comfortably inside GitHub's authenticated rate limit (5000/hr)
-but noticeably slower than a plain list. Worth it here because "does this
-repo have a README" is exactly what the tool exists to answer.
+Speed tradeoff: three extra requests per repo beyond the single list-endpoint
+call -- one root-directory listing (``_root_listing``, which answers README /
+CLAUDE.md / src-layout / tests / .gitignore / CI-config in a single request
+rather than one request per item), one branch-protection check, and one
+contributor count. For ~50 repos that's ~150 requests, comfortably inside
+GitHub's authenticated rate limit (5000/hr) but noticeably slower than a
+plain list.
 """
 
 from __future__ import annotations
@@ -39,9 +42,11 @@ class ApiError(RuntimeError):
 class RepoInfo:
     """One GitHub repo, normalised to the fields health checks need.
 
-    ``license`` is ``""`` when no license is detected. ``contributors`` is
-    ``None`` only if the count could not be determined (e.g. an empty repo
-    with no commits yet).
+    ``license`` is ``""`` when no license is detected. ``contributors`` and
+    ``branch_protected`` are ``None`` only if the value could not be
+    determined (e.g. an empty repo with no commits yet, or a protection
+    check the token lacks permission to read) -- distinct from ``False``,
+    which means checked and confirmed missing/unprotected.
     """
 
     owner: str
@@ -53,8 +58,16 @@ class RepoInfo:
     archived: bool
     license: str
     has_readme: bool
+    has_claude_md: bool
+    has_src_layout: bool
+    has_tests_dir: bool
+    has_gitignore: bool
+    has_ci_config: bool
+    has_pyproject: bool
+    branch_protected: bool | None
     contributors: int | None
     topics: list[str] = field(default_factory=list)
+    language: str = ""
     stars: int = 0
     forks: int = 0
     open_issues: int = 0
@@ -234,14 +247,70 @@ def _contributor_count(full_name: str, headers: dict[str, str]) -> int | None:
     return len(data) if isinstance(data, list) else 0
 
 
-def _has_readme(full_name: str, headers: dict[str, str]) -> bool:
-    status, _, _ = _request(f"{GITHUB_API}/repos/{full_name}/readme", headers)
-    return status == 200
+def _branch_protection(full_name: str, branch: str, headers: dict[str, str]) -> bool | None:
+    """Whether ``branch`` can't be force-pushed to or deleted.
+
+    "Protected" here specifically means: branch protection is enabled, and
+    both force pushes and branch deletion are disallowed. Deliberately does
+    NOT require PR review counts or status checks -- those make sense for a
+    team workflow but not for solo work, and this tool covers both. The
+    force-push/deletion guard is the one thing worth enforcing regardless
+    of team size: it's the difference between "an accident can rewrite or
+    delete history" and "it can't."
+
+    Returns ``None`` (unknown, not "unprotected") if the check itself
+    fails for a reason other than "no protection configured". In practice
+    the common case is GitHub's branch-protection API being a paid-plan
+    feature for *private* repos -- it 403s with "Upgrade to GitHub Pro or
+    make this repository public" regardless of the token's permissions, so
+    most private repos on a free plan will read as unknown here, not
+    unprotected. Public repos get a real 404/200 answer either way.
+    """
+    if not branch:
+        return None
+    status, _, body = _request(
+        f"{GITHUB_API}/repos/{full_name}/branches/{urllib.parse.quote(branch)}/protection", headers
+    )
+    if status == 404:
+        return False
+    if status != 200:
+        return None
+    try:
+        data = json.loads(body or b"{}")
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(data, dict):
+        return None
+    force_push_allowed = bool((data.get("allow_force_pushes") or {}).get("enabled"))
+    deletion_allowed = bool((data.get("allow_deletions") or {}).get("enabled"))
+    return not force_push_allowed and not deletion_allowed
+
+
+def _root_listing(full_name: str, headers: dict[str, str]) -> tuple[set[str], set[str]]:
+    """Return ``(lowercased file names, lowercased dir names)`` at repo root.
+
+    One call answers several structural checks at once (README, CLAUDE.md,
+    src/ layout, tests/, .gitignore, CI config) instead of one dedicated
+    call per item. Trade-off: this is a plain root-directory listing, not
+    GitHub's smarter ``/readme`` endpoint, so it won't find a README that
+    lives outside the repo root or resolve symlinks -- an edge case rare
+    enough not to be worth a second call.
+    """
+    try:
+        data, _ = _get_json(f"{GITHUB_API}/repos/{full_name}/contents", headers)
+    except ApiError:
+        return set(), set()
+    if not isinstance(data, list):
+        return set(), set()
+    files = {e["name"].lower() for e in data if e.get("type") == "file" and "name" in e}
+    dirs = {e["name"].lower() for e in data if e.get("type") == "dir" and "name" in e}
+    return files, dirs
 
 
 def _to_repo_info(raw: dict[str, Any], headers: dict[str, str]) -> RepoInfo:
     lic = raw.get("license") or {}
     full_name = raw.get("full_name") or f"{(raw.get('owner') or {}).get('login', '')}/{raw.get('name', '')}"
+    files, dirs = _root_listing(full_name, headers)
     return RepoInfo(
         owner=(raw.get("owner") or {}).get("login", ""),
         name=raw.get("name", ""),
@@ -251,9 +320,17 @@ def _to_repo_info(raw: dict[str, Any], headers: dict[str, str]) -> RepoInfo:
         is_fork=bool(raw.get("fork")),
         archived=bool(raw.get("archived")),
         license=lic.get("spdx_id") or lic.get("name") or "",
-        has_readme=_has_readme(full_name, headers),
+        has_readme=any(f.startswith("readme") for f in files),
+        has_claude_md="claude.md" in files,
+        has_src_layout="src" in dirs,
+        has_tests_dir="tests" in dirs or "test" in dirs,
+        has_gitignore=".gitignore" in files,
+        has_ci_config=".github" in dirs,
+        has_pyproject="pyproject.toml" in files,
+        branch_protected=_branch_protection(full_name, raw.get("default_branch") or "", headers),
         contributors=_contributor_count(full_name, headers),
         topics=list(raw.get("topics") or []),
+        language=raw.get("language") or "",
         stars=int(raw.get("stargazers_count") or 0),
         forks=int(raw.get("forks_count") or 0),
         open_issues=int(raw.get("open_issues_count") or 0),
