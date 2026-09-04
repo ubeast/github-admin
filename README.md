@@ -10,8 +10,16 @@ $ github-admin
 ```
 
 prints a table sorted worst-first (most issues on top), so problem repos
-never get buried below healthy ones. Pass `--html report.html` to also save a
-browser-viewable copy.
+never get buried below healthy ones.
+
+Two HTML export options:
+
+- `--html report.html` -- a plain static table, every issue spelled out as text.
+- `--dashboard report.html` -- an interactive page: a compact checklist per
+  repo, click-to-filter chips (missing / has, multi-select), and click any
+  column header to sort (click another header to add it as a tie-breaker,
+  building a multi-column sort in click order). This is the one worth
+  opening in a browser and actually using, not just reading.
 
 ## What it checks
 

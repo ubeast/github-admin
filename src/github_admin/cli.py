@@ -8,7 +8,7 @@ from typing import Annotated
 import typer
 from rich.console import Console
 
-from github_admin import github_api, health, render_html, render_terminal
+from github_admin import github_api, health, render_dashboard, render_html, render_terminal
 
 app = typer.Typer(add_completion=False, no_args_is_help=False)
 _err = Console(stderr=True)
@@ -27,7 +27,11 @@ def report(
         int, typer.Option(help="Flag repos with no push in this many days as stale.")
     ] = health.DEFAULT_STALE_DAYS,
     html: Annotated[
-        Path | None, typer.Option(help="Also write an HTML report to this path.")
+        Path | None, typer.Option(help="Also write a plain static HTML report to this path.")
+    ] = None,
+    dashboard: Annotated[
+        Path | None,
+        typer.Option(help="Also write an interactive HTML dashboard to this path (filter + multi-column sort)."),
     ] = None,
     quiet: Annotated[bool, typer.Option("--quiet", "-q", help="Suppress fetch progress on stderr.")] = False,
 ) -> None:
@@ -52,6 +56,10 @@ def report(
     if html is not None:
         html.write_text(render_html.render(results), encoding="utf-8")
         _err.print(f"\n[dim]wrote {html}[/dim]")
+
+    if dashboard is not None:
+        dashboard.write_text(render_dashboard.render(results), encoding="utf-8")
+        _err.print(f"[dim]wrote {dashboard}[/dim]")
 
 
 def main() -> None:
