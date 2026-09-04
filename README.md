@@ -34,7 +34,7 @@ Two HTML export options:
 | topics | no topics are set |
 | .gitignore | repo has no `.gitignore` at the root |
 | tests directory | repo has no `tests/` or `test/` at the root |
-| CI config | repo has no `.github/` at the root |
+| CI config | repo has no `.github/` at the root (forks are exempt) |
 | pyproject.toml | **Python repos only** -- no `pyproject.toml` at the root |
 | stale | no push in `--stale-days` days (default 180) |
 
