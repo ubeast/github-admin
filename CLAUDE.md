@@ -53,6 +53,17 @@ and the check list.
   as a fallback (`github_api.resolve_token`). Matches actually being logged
   in via the `gh` CLI already, rather than requiring a separate token setup.
 
+## Open questions
+
+- **Should the "no CI config" check exempt forks (and maybe tutorial/demo
+  repos)?** Right now it fires for every non-archived repo, same as most
+  other checks. The *contributors* check already exempts forks ("a fork
+  inherits the upstream's docs") -- CI arguably deserves the same
+  treatment, since you didn't choose to set up CI for someone else's code,
+  and a single-notebook tutorial repo has nothing continuous to test.
+  Deliberately not decided yet (2026-09) -- see the comment at the check in
+  `health.py`.
+
 ## Layout
 
 ```

@@ -68,6 +68,14 @@ def check(repo: RepoInfo, *, stale_days: int = DEFAULT_STALE_DAYS, today: date |
         issues.append("no .gitignore")
     if not repo.has_tests_dir:
         issues.append("no tests directory")
+    # OPEN QUESTION (flagged 2026-09, not yet resolved): this fires for
+    # every non-archived repo, including forks and tutorial/demo repos
+    # where you never chose to set up CI for someone else's code or where
+    # there's nothing meaningfully continuous to test. The contributors
+    # check already exempts forks for the analogous reason -- CI arguably
+    # deserves the same exemption, but that decision was deliberately
+    # deferred rather than made here. Revisit before treating "no CI
+    # config" as a strong signal across the whole portfolio.
     if not repo.has_ci_config:
         issues.append("no CI config")
     if repo.language == "Python" and not repo.has_pyproject:
