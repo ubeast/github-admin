@@ -44,12 +44,12 @@ import urllib.request
 from collections.abc import Callable
 from typing import Any
 
-from github_admin.github_api import RepoInfo
+from repo_healthcheck.github_api import RepoInfo
 
 __all__ = ["ApiError", "fetch_repos", "resolve_token", "GITLAB_DEFAULT_URL"]
 
 GITLAB_DEFAULT_URL = "https://gitlab.com"
-USER_AGENT = "github-admin/0.1 (+https://github.com/ubeast/github-admin)"
+USER_AGENT = "repo-healthcheck/0.1 (+https://github.com/ubeast/repo-healthcheck)"
 
 
 class ApiError(RuntimeError):

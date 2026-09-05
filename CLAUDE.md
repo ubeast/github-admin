@@ -1,4 +1,4 @@
-# github-admin
+# repo-healthcheck
 
 A CLI that consolidates every GitHub repo you can see (and, with `--gitlab`,
 your GitLab projects too) into one health-check view (README / CLAUDE.md /
@@ -155,7 +155,7 @@ structure / staleness). See `README.md` for usage and the check list.
 ## Layout
 
 ```
-src/github_admin/
+src/repo_healthcheck/
   github_api.py       # GitHub HTTP client -> list[RepoInfo]
   gitlab_api.py        # GitLab HTTP client -> list[RepoInfo] (same shape, platform="gitlab")
   health.py            # RepoInfo -> RepoHealth (issues found), sorted worst-first

@@ -3,9 +3,9 @@ from __future__ import annotations
 import pytest
 from typer.testing import CliRunner
 
-from github_admin import github_api, gitlab_api
-from github_admin.cli import app
-from github_admin.github_api import RepoInfo
+from repo_healthcheck import github_api, gitlab_api
+from repo_healthcheck.cli import app
+from repo_healthcheck.github_api import RepoInfo
 
 runner = CliRunner()
 

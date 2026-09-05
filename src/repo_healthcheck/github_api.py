@@ -36,7 +36,7 @@ from typing import Any
 __all__ = ["RepoInfo", "ApiError", "fetch_repos", "resolve_token"]
 
 GITHUB_API = "https://api.github.com"
-USER_AGENT = "github-admin/0.1 (+https://github.com/ubeast/github-admin)"
+USER_AGENT = "repo-healthcheck/0.1 (+https://github.com/ubeast/repo-healthcheck)"
 
 
 class ApiError(RuntimeError):

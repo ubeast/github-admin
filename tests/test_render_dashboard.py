@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from github_admin import render_dashboard
-from github_admin.github_api import RepoInfo
-from github_admin.health import RepoHealth
+from repo_healthcheck import render_dashboard
+from repo_healthcheck.github_api import RepoInfo
+from repo_healthcheck.health import RepoHealth
 
 
 def _repo(**overrides: object) -> RepoInfo:
