@@ -32,6 +32,7 @@ classifiers = [
 Homepage = "https://ubeast.github.io/repo-healthcheck/"
 Repository = "https://github.com/ubeast/repo-healthcheck"
 Issues = "https://github.com/ubeast/repo-healthcheck/issues"
+Author = "https://medium.com/@michael.schertz"
 
 [project.scripts]
 repo-healthcheck = "repo_healthcheck.cli:app"
