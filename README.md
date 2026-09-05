@@ -1,5 +1,7 @@
 # repo-healthcheck
 
+**[See it in action →](https://ubeast.github.io/repo-healthcheck/)**
+
 Consolidates every GitHub repo you can see (and, with `--gitlab`, your GitLab
 projects too) into a single health-check view, so you can spot what's missing
 (README, CLAUDE.md, branch protection, license, contributors, description,
