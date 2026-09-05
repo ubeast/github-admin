@@ -20,3 +20,6 @@ wheels/
 # Generated reports
 *.html
 !docs/**/*.html
+
+# Personal drafts (blog posts, social copy) -- not project content
+drafts/

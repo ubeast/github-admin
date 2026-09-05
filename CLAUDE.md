@@ -194,3 +194,6 @@ tests, and unit-tested directly with mocked HTTP responses elsewhere.
 
 - One PR per change; branch off `main`.
 - Commit trailer: `Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>`.
+- Personal drafts (blog posts, social copy, anything not project source) go
+  in `drafts/` at the repo root. It's gitignored -- never push it to
+  GitHub, even incidentally via a broad `git add`.
