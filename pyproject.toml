@@ -3,6 +3,7 @@ name = "repo-healthcheck"
 version = "0.1.0"
 description = "CLI that consolidates every GitHub (and optionally GitLab) repo you can see into one worst-first health-check report -- README, license, branch protection, CI, tests, staleness, and more -- as a terminal table or an interactive HTML dashboard."
 readme = "README.md"
+license = { file = "LICENSE" }
 authors = [
     { name = "Michael Schertz", email = "michael.schertz@gmail.com" }
 ]
