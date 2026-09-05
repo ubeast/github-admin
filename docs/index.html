@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>repo-healthcheck</title>
+<meta name="description" content="A CLI that audits every GitHub and GitLab repo you own for the things that quietly go wrong — no license, no branch protection, no CI — sorted worst first.">
+<meta property="og:title" content="repo-healthcheck">
+<meta property="og:description" content="A CLI that audits every GitHub and GitLab repo you own for the things that quietly go wrong — sorted worst first.">
+<meta property="og:image" content="images/masthead.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;0,700;1,500;1,600&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root {
+  --paper: #f1f3ee;
+  --surface: #ffffff;
+  --surface-2: #e7ebe1;
+  --ink: #1e2a22;
+  --ink-soft: #55635a;
+  --line: #d9dfd2;
+  --accent: #2b5d6b;
+  --accent-soft: #dce9ea;
+  --good: #2f7a4f;
+  --good-soft: #e3f0e6;
+  --warn: #a8721f;
+  --warn-soft: #f5ead4;
+  --bad: #b23a2e;
+  --bad-soft: #f6e1dd;
+  --shadow: 0 1px 2px rgba(30,42,34,0.06), 0 12px 32px rgba(30,42,34,0.08);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #10140f;
+    --surface: #182019;
+    --surface-2: #1e2720;
+    --ink: #e7ede4;
+    --ink-soft: #a7b4a9;
+    --line: #2b3830;
+    --accent: #86c6d3;
+    --accent-soft: #1d3338;
+    --good: #7dd6a0;
+    --good-soft: #182a1f;
+    --warn: #e0ae5c;
+    --warn-soft: #2e2313;
+    --bad: #e2776a;
+    --bad-soft: #331e1a;
+    --shadow: 0 1px 2px rgba(0,0,0,0.35), 0 20px 50px rgba(0,0,0,0.45);
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #10140f;
+  --surface: #182019;
+  --surface-2: #1e2720;
+  --ink: #e7ede4;
+  --ink-soft: #a7b4a9;
+  --line: #2b3830;
+  --accent: #86c6d3;
+  --accent-soft: #1d3338;
+  --good: #7dd6a0;
+  --good-soft: #182a1f;
+  --warn: #e0ae5c;
+  --warn-soft: #2e2313;
+  --bad: #e2776a;
+  --bad-soft: #331e1a;
+  --shadow: 0 1px 2px rgba(0,0,0,0.35), 0 20px 50px rgba(0,0,0,0.45);
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 920px; margin: 0 auto; padding: 0 1.5rem; }
+.wide { max-width: 1080px; margin: 0 auto; padding: 0 1.5rem; }
+
+h1, h2, h3 { font-family: "Fraunces", Georgia, serif; text-wrap: balance; margin: 0; }
+em { font-style: italic; color: var(--accent); }
+code, .mono { font-family: "IBM Plex Mono", monospace; }
+
+.eyebrow {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.74rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 1rem;
+}
+
+/* ---------- Hero ---------- */
+.hero {
+  padding: 5rem 0 4rem;
+  border-bottom: 1px solid var(--line);
+}
+.hero h1 {
+  font-size: clamp(2.4rem, 5.5vw, 4rem);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.015em;
+  max-width: 14ch;
+}
+.hero-sub {
+  margin: 1.5rem 0 0;
+  font-size: 1.15rem;
+  line-height: 1.6;
+  color: var(--ink-soft);
+  max-width: 56ch;
+}
+.hero-links {
+  margin-top: 2rem;
+  display: flex;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+}
+.btn {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.85rem;
+  padding: 0.7rem 1.2rem;
+  border-radius: 8px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid transparent;
+}
+.btn-primary { background: var(--ink); color: var(--paper); }
+:root:not([data-theme="light"]) .btn-primary,
+:root[data-theme="dark"] .btn-primary { background: var(--accent); color: #0b1210; }
+.btn-ghost { border-color: var(--line); color: var(--ink); }
+.btn-ghost:hover, .btn-primary:hover { opacity: 0.85; }
+
+/* terminal mock */
+.term {
+  margin-top: 3rem;
+  background: #0d1310;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.term-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.7rem 0.9rem;
+  background: #10160f;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.term-dot { width: 9px; height: 9px; border-radius: 50%; background: #3a453d; }
+.term-title {
+  margin-left: 0.5rem;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.72rem;
+  color: #7c8a80;
+}
+.term-body {
+  padding: 1.3rem 1.4rem 1.6rem;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.76rem;
+  line-height: 1.65;
+  color: #cfe0d4;
+  overflow-x: auto;
+  white-space: pre;
+}
+.term-prompt { color: #7dd6a0; }
+.term-dim { color: #63716a; }
+.term-ok { color: #7dd6a0; }
+.term-bad { color: #e2776a; }
+.cursor {
+  display: inline-block;
+  width: 7px;
+  height: 1em;
+  background: #7dd6a0;
+  vertical-align: text-bottom;
+  animation: blink 1s step-start infinite;
+}
+@media (prefers-reduced-motion: reduce) { .cursor { animation: none; } }
+@keyframes blink { 50% { opacity: 0; } }
+
+/* ---------- generic section rhythm ---------- */
+section { padding: 4rem 0; }
+section.tint { background: var(--surface-2); }
+.section-head { max-width: 62ch; margin-bottom: 2.5rem; }
+.section-head h2 { font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 600; }
+.section-head p { color: var(--ink-soft); font-size: 1.02rem; line-height: 1.6; margin: 0.9rem 0 0; }
+
+/* ---------- pain points ---------- */
+.pains {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.pain { background: var(--surface); padding: 1.6rem 1.5rem; }
+.pain-mark {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.72rem;
+  color: var(--bad);
+  background: var(--bad-soft);
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  margin-bottom: 0.9rem;
+}
+.pain h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; }
+.pain p { color: var(--ink-soft); font-size: 0.92rem; line-height: 1.55; margin: 0; }
+
+/* ---------- showcase ---------- */
+.showcase-item {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 2.2rem;
+  align-items: start;
+  padding: 2.5rem 0;
+}
+.showcase-item + .showcase-item { border-top: 1px solid var(--line); }
+.showcase-num {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+}
+.showcase-item h3 { font-size: 1.3rem; margin: 0.4rem 0 0.6rem; font-weight: 600; }
+.showcase-item p { color: var(--ink-soft); line-height: 1.6; margin: 0; max-width: 40ch; }
+.shot {
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  background: #0d1310;
+}
+.shot img { display: block; width: 100%; height: auto; }
+@media (max-width: 720px) {
+  .showcase-item { grid-template-columns: 1fr; gap: 1rem; }
+}
+
+/* ---------- checklist ---------- */
+.check-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.7rem;
+}
+.check {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.85rem 0.95rem;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.2rem 0.65rem;
+  align-items: start;
+}
+.check-code {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.66rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-soft);
+  width: 24px; height: 20px;
+  border-radius: 5px;
+  display: flex; align-items: center; justify-content: center;
+  margin-top: 0.1rem;
+}
+.check-label { font-weight: 600; font-size: 0.88rem; grid-column: 2; }
+.check-crit { grid-column: 2; color: var(--ink-soft); font-size: 0.78rem; margin-top: 0.1rem; line-height: 1.4; }
+
+/* ---------- platform callout ---------- */
+.platforms {
+  display: flex;
+  gap: 1.2rem;
+  flex-wrap: wrap;
+}
+.platform-card {
+  flex: 1 1 240px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 1.6rem 1.5rem;
+}
+.platform-card .mono { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.platform-card p { color: var(--ink-soft); font-size: 0.92rem; line-height: 1.55; margin: 0.6rem 0 0; }
+
+/* ---------- install ---------- */
+.install-block {
+  background: #0d1310;
+  border-radius: 12px;
+  padding: 1.5rem 1.6rem;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.82rem;
+  line-height: 2;
+  color: #cfe0d4;
+  box-shadow: var(--shadow);
+  overflow-x: auto;
+}
+.install-block .term-prompt { margin-right: 0.6rem; }
+.install-note { color: var(--ink-soft); font-size: 0.88rem; margin-top: 1rem; line-height: 1.6; }
+
+/* ---------- closing ---------- */
+.closing {
+  text-align: left;
+  padding: 5rem 0 6rem;
+}
+.closing h2 {
+  font-size: clamp(2rem, 4.5vw, 3rem);
+  font-weight: 600;
+  max-width: 16ch;
+}
+.closing .stat-line {
+  margin-top: 1.2rem;
+  color: var(--ink-soft);
+  font-size: 1.05rem;
+  max-width: 50ch;
+  line-height: 1.6;
+}
+.closing .hero-links { margin-top: 2.2rem; }
+
+footer {
+  border-top: 1px solid var(--line);
+  padding: 2rem 0 3rem;
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+}
+footer a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap hero">
+  <p class="eyebrow">repo-healthcheck &middot; a CLI for people with too many repos</p>
+  <h1>What every repo should have.</h1>
+  <p class="hero-sub">One command looks at every repo you can see &mdash; on GitHub, and now GitLab too &mdash;
+  and tells you, worst first, exactly what's missing: a license, a protected branch, a README,
+  a CI config. The stuff you meant to add and then forgot you didn't.</p>
+  <div class="hero-links">
+    <a class="btn btn-primary" href="https://github.com/ubeast/repo-healthcheck">View on GitHub &rarr;</a>
+    <a class="btn btn-ghost" href="https://github.com/ubeast/repo-healthcheck#install">Install with uv</a>
+  </div>
+
+  <div class="term">
+    <div class="term-bar">
+      <span class="term-dot"></span><span class="term-dot"></span><span class="term-dot"></span>
+      <span class="term-title">zsh &mdash; repo-healthcheck</span>
+    </div>
+    <div class="term-body" id="termBody"></div>
+  </div>
+</div>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <h2>The gaps you don't find until it's too late.</h2>
+      <p>None of these show up until someone hits them &mdash; usually the day it matters most.</p>
+    </div>
+    <div class="pains">
+      <div class="pain">
+        <span class="pain-mark">no license</span>
+        <h3>The license trap</h3>
+        <p>No <code>LICENSE</code> file means GitHub's legal default is "all rights reserved" &mdash;
+        nobody, including future you, can safely reuse the code. And GitHub's own detector
+        sometimes reports a perfectly real GPL license as <code>NOASSERTION</code>, hiding it entirely.</p>
+      </div>
+      <div class="pain">
+        <span class="pain-mark">not protected</span>
+        <h3>The one bad push</h3>
+        <p>Without branch protection, a single accidental <code>git push --force</code> to
+        <code>main</code> rewrites history with no way back. It happens on side projects
+        precisely because nobody thought a side project needed protecting.</p>
+      </div>
+      <div class="pain">
+        <span class="pain-mark">no CI, no tests</span>
+        <h3>The repo you forgot</h3>
+        <p>Forked eight months ago, still public, still listed under your name. No tests,
+        no CI, no idea if it still runs &mdash; and no way to find that out without opening
+        every repo one at a time.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="tint">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>The product, in three moves.</h2>
+      <p>Run it once. It fetches everything the token can see, checks twelve things per repo,
+      and hands you an interactive report &mdash; not a wall of JSON.</p>
+    </div>
+
+    <div class="showcase-item">
+      <div>
+        <div class="showcase-num">01 &mdash; THE SCORECARD</div>
+        <h3>See the damage first</h3>
+        <p>Total repos, how many have at least one gap, the average, and the single
+        most common thing missing across the whole account &mdash; before you scroll to a single row.</p>
+      </div>
+      <div class="shot"><img src="images/masthead.png" alt="Dashboard header showing 12 repos audited, 5 with gaps, 2.8 average gaps per repo, License as the most common gap" loading="lazy"></div>
+    </div>
+
+    <div class="showcase-item">
+      <div>
+        <div class="showcase-num">02 &mdash; THE STANDARD</div>
+        <h3>Twelve checks, spelled out</h3>
+        <p>Every check gets a two-letter code, a plain-English criterion, and a live
+        missing-count &mdash; so "5/12 missing" always means something specific, never a mystery flag.</p>
+      </div>
+      <div class="shot"><img src="images/checklist.png" alt="Checklist grid showing README, CLAUDE.md, License, Description, Topics, .gitignore, Tests, CI config, Contributors, Active, Branch protected, and pyproject.toml checks with their criteria and missing counts" loading="lazy"></div>
+    </div>
+
+    <div class="showcase-item">
+      <div>
+        <div class="showcase-num">03 &mdash; WORST FIRST</div>
+        <h3>Click to filter, click to sort</h3>
+        <p>Every checklist chip filters the table on click. Every column header sorts,
+        and stacks as a tie-breaker. "Forks only" and a search box come free.</p>
+      </div>
+      <div class="shot"><img src="images/table.png" alt="Interactive repo table sorted worst-first, with filter chips for each check and columns for branch protection, license type, contributors, forks, topics, and last push date" loading="lazy"></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <h2>What it actually checks</h2>
+      <p>Every standard, in one place &mdash; the same list that drives the checklist chips above.</p>
+    </div>
+    <div class="check-grid">
+      <div class="check"><span class="check-code">RM</span><span class="check-label">README</span><span class="check-crit">exists at the repo root</span></div>
+      <div class="check"><span class="check-code">CM</span><span class="check-label">CLAUDE.md</span><span class="check-crit">project context for Claude Code</span></div>
+      <div class="check"><span class="check-code">LC</span><span class="check-label">License</span><span class="check-crit">detected, or a GNU license found by name</span></div>
+      <div class="check"><span class="check-code">DS</span><span class="check-label">Description</span><span class="check-crit">the About field is filled in</span></div>
+      <div class="check"><span class="check-code">TP</span><span class="check-label">Topics</span><span class="check-crit">at least one topic is set</span></div>
+      <div class="check"><span class="check-code">GI</span><span class="check-label">.gitignore</span><span class="check-crit">exists at the repo root</span></div>
+      <div class="check"><span class="check-code">TS</span><span class="check-label">Tests</span><span class="check-crit"><code>tests/</code> or <code>test/</code> exists</span></div>
+      <div class="check"><span class="check-code">CI</span><span class="check-label">CI config</span><span class="check-crit"><code>.github/</code> or <code>.gitlab-ci.yml</code></span></div>
+      <div class="check"><span class="check-code">CN</span><span class="check-label">Contributors</span><span class="check-crit">someone besides the owner committed</span></div>
+      <div class="check"><span class="check-code">AC</span><span class="check-label">Active</span><span class="check-crit">pushed in the last 180 days</span></div>
+      <div class="check"><span class="check-code">PR</span><span class="check-label">Branch protected</span><span class="check-crit">force-push &amp; deletion disallowed</span></div>
+      <div class="check"><span class="check-code">PY</span><span class="check-label">pyproject.toml</span><span class="check-crit">Python repos only</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="tint">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>One account moved to GitLab. It doesn't care.</h2>
+      <p>Pass <code>--gitlab</code> and your GitLab projects land in the same table, same
+      worst-first sort, same twelve checks &mdash; tagged so you always know which platform a repo lives on.</p>
+    </div>
+    <div class="platforms">
+      <div class="platform-card">
+        <span class="mono">github</span>
+        <p>Every repo the token can see &mdash; your own, plus every org you belong to &mdash;
+        in one call. <code>--owner NAME</code> narrows to one account's public repos.</p>
+      </div>
+      <div class="platform-card">
+        <span class="mono">gitlab</span>
+        <p>Same twelve checks against GitLab's API &mdash; <code>.gitlab-ci.yml</code> instead
+        of <code>.github/</code>, protected branches via GitLab's own endpoint. Self-managed
+        instances work too, via <code>--gitlab-url</code>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Two minutes to your first report</h2>
+    </div>
+    <div class="install-block">
+<span class="term-prompt">$</span>uv sync
+<span class="term-prompt">$</span>uv run repo-healthcheck --dashboard report.html
+<span class="term-dim"># or, to include GitLab:</span>
+<span class="term-prompt">$</span>export GITLAB_TOKEN=glpat-xxx
+<span class="term-prompt">$</span>uv run repo-healthcheck --gitlab --dashboard report.html</div>
+    <p class="install-note">Reads <code>GITHUB_TOKEN</code> if it's set, otherwise falls back to
+    <code>gh auth token</code> &mdash; if you're already logged in via the <code>gh</code> CLI,
+    there's nothing else to configure. Read-only: it never writes to a repo it audits.</p>
+  </div>
+</section>
+
+<div class="wrap closing">
+  <h2>What would <em>yours</em> find?</h2>
+  <p class="stat-line">The account behind these screenshots had twelve repos and five gaps
+  before it ever ran a single fix. Most accounts have more than twelve.</p>
+  <div class="hero-links">
+    <a class="btn btn-primary" href="https://github.com/ubeast/repo-healthcheck">View on GitHub &rarr;</a>
+  </div>
+</div>
+
+<footer class="wrap">
+  Read-only, MIT-licensed, built with <code>uv</code> and <code>typer</code>.
+  &middot; <a href="https://github.com/ubeast/repo-healthcheck">github.com/ubeast/repo-healthcheck</a>
+</footer>
+
+<script>
+(function() {
+  var lines = [
+    { html: '<span class="term-prompt">$</span> repo-healthcheck --dashboard report.html', pause: 350 },
+    { html: '', pause: 60 },
+    { html: '<span class="term-dim">                    repo-healthcheck -- 12 repos (sample-org)</span>', pause: 40 },
+    { html: '<span class="term-dim">┌──────────────────────┬────────┬───────────┬───────────┬─────────┐</span>', pause: 10 },
+    { html: '<span class="term-dim">│</span> repo                 <span class="term-dim">│</span> readme <span class="term-dim">│</span> claude.md <span class="term-dim">│</span> protected <span class="term-dim">│</span> license <span class="term-dim">│</span>', pause: 20 },
+    { html: '<span class="term-dim">├──────────────────────┼────────┼───────────┼───────────┼─────────┤</span>', pause: 10 },
+    { html: '<span class="term-dim">│</span> legacy-importer      <span class="term-dim">│</span>   <span class="term-bad">✗</span>    <span class="term-dim">│</span>     <span class="term-bad">✗</span>     <span class="term-dim">│</span>     <span class="term-bad">✗</span>     <span class="term-dim">│</span>    <span class="term-bad">✗</span>    <span class="term-dim">│</span>', pause: 30 },
+    { html: '<span class="term-dim">│</span> tutorial-notebook    <span class="term-dim">│</span>   <span class="term-ok">✓</span>    <span class="term-dim">│</span>     <span class="term-bad">✗</span>     <span class="term-dim">│</span>     <span class="term-ok">✓</span>     <span class="term-dim">│</span>    <span class="term-bad">✗</span>    <span class="term-dim">│</span>', pause: 30 },
+    { html: '<span class="term-dim">│</span> gplv3-toolkit        <span class="term-dim">│</span>   <span class="term-ok">✓</span>    <span class="term-dim">│</span>     <span class="term-ok">✓</span>     <span class="term-dim">│</span>     <span class="term-ok">✓</span>     <span class="term-dim">│</span>    <span class="term-ok">✓</span>    <span class="term-dim">│</span>', pause: 30 },
+    { html: '<span class="term-dim">└──────────────────────┴────────┴───────────┴───────────┴─────────┘</span>', pause: 40 },
+    { html: '', pause: 60 },
+    { html: '12 of 12 repos have at least one issue.', pause: 20 },
+    { html: '<span class="term-dim">wrote report.html</span>', pause: 0 }
+  ];
+  var el = document.getElementById('termBody');
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function renderAll() {
+    el.innerHTML = lines.map(function(l) { return l.html; }).join('\n');
+  }
+
+  if (reduceMotion) {
+    renderAll();
+    return;
+  }
+
+  var i = 0;
+  function next() {
+    if (i >= lines.length) {
+      el.appendChild(document.createElement('span')).outerHTML = '<span class="cursor"></span>';
+      return;
+    }
+    var span = document.createElement('div');
+    span.innerHTML = lines[i].html || '&nbsp;';
+    el.appendChild(span);
+    var pause = lines[i].pause;
+    i++;
+    setTimeout(next, pause);
+  }
+  next();
+})();
+</script>
+</body>
+</html>
