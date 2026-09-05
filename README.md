@@ -1,4 +1,4 @@
-# github-admin
+# repo-healthcheck
 
 Consolidates every GitHub repo you can see (and, with `--gitlab`, your GitLab
 projects too) into a single health-check view, so you can spot what's missing
@@ -7,7 +7,7 @@ topics, project structure, staleness) without clicking through each repo
 individually.
 
 ```bash
-$ github-admin
+$ repo-healthcheck
 ```
 
 prints a table sorted worst-first (most issues on top), so problem repos
@@ -99,7 +99,7 @@ instead of it) -- both appear in the same table, tagged `(gitlab)` /
 
 ```bash
 $ export GITLAB_TOKEN=glpat-xxx
-$ github-admin --gitlab
+$ repo-healthcheck --gitlab
 ```
 
 - `--gitlab-owner NAME` -- only that user's public GitLab projects, instead
@@ -121,7 +121,7 @@ needed, not worth it for one column).
 
 ```bash
 uv sync
-uv run github-admin --help
+uv run repo-healthcheck --help
 ```
 
 ## Tests

@@ -15,7 +15,7 @@ from collections.abc import Callable
 from datetime import datetime
 from html import escape
 
-from github_admin.health import RepoHealth
+from repo_healthcheck.health import RepoHealth
 
 __all__ = ["render"]
 
@@ -276,7 +276,7 @@ def render(results: list[RepoHealth]) -> str:
 <html>
 <head>
 <meta charset="utf-8">
-<title>github-admin dashboard</title>
+<title>repo-healthcheck dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;0,700;1,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>{_STYLE}</style>
@@ -285,7 +285,7 @@ def render(results: list[RepoHealth]) -> str:
 <div class="wrap">
   <div class="masthead">
     <div>
-      <p class="eyebrow">github-admin &middot; repo audit</p>
+      <p class="eyebrow">repo-healthcheck &middot; repo audit</p>
       <h1>What every repo should have</h1>
     </div>
     <div class="meta">
@@ -368,7 +368,7 @@ def render(results: list[RepoHealth]) -> str:
   </section>
 
   <footer>
-    Generated locally by <a href="https://github.com/ubeast/github-admin">github-admin</a> &mdash; read-only, no changes were made to any repo.
+    Generated locally by <a href="https://github.com/ubeast/repo-healthcheck">repo-healthcheck</a> &mdash; read-only, no changes were made to any repo.
   </footer>
 </div>
 

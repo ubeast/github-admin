@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from github_admin import gitlab_api
+from repo_healthcheck import gitlab_api
 
 
 def test_resolve_token_from_env(monkeypatch: pytest.MonkeyPatch) -> None:

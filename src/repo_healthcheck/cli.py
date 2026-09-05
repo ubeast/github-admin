@@ -1,4 +1,4 @@
-"""``github-admin`` CLI: consolidate your GitHub (and optionally GitLab) repos into one health-check view."""
+"""``repo-healthcheck`` CLI: consolidate your GitHub (and optionally GitLab) repos into one health-check view."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from typing import Annotated
 import typer
 from rich.console import Console
 
-from github_admin import github_api, gitlab_api, health, render_dashboard, render_html, render_terminal
+from repo_healthcheck import github_api, gitlab_api, health, render_dashboard, render_html, render_terminal
 
 app = typer.Typer(add_completion=False, no_args_is_help=False)
 _err = Console(stderr=True)

@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date, datetime
 
-from github_admin.github_api import RepoInfo
+from repo_healthcheck.github_api import RepoInfo
 
 __all__ = ["RepoHealth", "check", "DEFAULT_STALE_DAYS"]
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from github_admin import github_api
+from repo_healthcheck import github_api
 
 
 def test_parse_link_header() -> None:

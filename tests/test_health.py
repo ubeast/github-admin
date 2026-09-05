@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from datetime import date
 
-from github_admin import health
-from github_admin.github_api import RepoInfo
+from repo_healthcheck import health
+from repo_healthcheck.github_api import RepoInfo
 
 
 def _repo(**overrides: object) -> RepoInfo:

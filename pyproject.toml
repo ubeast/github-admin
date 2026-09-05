@@ -1,7 +1,7 @@
 [project]
-name = "github-admin"
+name = "repo-healthcheck"
 version = "0.1.0"
-description = "Consolidates all your GitHub repos into a single health-check view: README, license, contributors, forks, staleness, and more, at a glance."
+description = "CLI that consolidates every GitHub (and optionally GitLab) repo you can see into one worst-first health-check report -- README, license, branch protection, CI, tests, staleness, and more -- as a terminal table or an interactive HTML dashboard."
 readme = "README.md"
 authors = [
     { name = "Michael Schertz", email = "michael.schertz@gmail.com" }
@@ -13,7 +13,7 @@ dependencies = [
 ]
 
 [project.scripts]
-github-admin = "github_admin.cli:app"
+repo-healthcheck = "repo_healthcheck.cli:app"
 
 [build-system]
 requires = ["hatchling"]
@@ -36,7 +36,7 @@ select = ["E", "F", "I", "UP", "B"]
 [tool.ruff.lint.per-file-ignores]
 # Inline CSS/JS/HTML content -- long one-liners here are more readable
 # unwrapped than artificially broken across lines.
-"src/github_admin/render_dashboard.py" = ["E501"]
+"src/repo_healthcheck/render_dashboard.py" = ["E501"]
 
 [tool.mypy]
 python_version = "3.10"

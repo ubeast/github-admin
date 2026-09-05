@@ -6,7 +6,7 @@ from collections import Counter
 from datetime import datetime
 from html import escape
 
-from github_admin.health import RepoHealth
+from repo_healthcheck.health import RepoHealth
 
 __all__ = ["render"]
 
@@ -116,11 +116,11 @@ def render(results: list[RepoHealth]) -> str:
 <html>
 <head>
 <meta charset="utf-8">
-<title>github-admin report</title>
+<title>repo-healthcheck report</title>
 <style>{_STYLE}</style>
 </head>
 <body>
-<h1>github-admin -- repo health report</h1>
+<h1>repo-healthcheck -- repo health report</h1>
 <p class="meta">{len(results)} repos, {unhealthy} with at least one issue. Generated {generated}.
 {f'Repos owned by <b>{escape(primary_owner)}</b> are shown without the owner prefix.' if primary_owner else ''}</p>
 <table>

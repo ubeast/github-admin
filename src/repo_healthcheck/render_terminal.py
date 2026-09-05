@@ -7,7 +7,7 @@ from collections import Counter
 from rich.console import Console
 from rich.table import Table
 
-from github_admin.health import RepoHealth
+from repo_healthcheck.health import RepoHealth
 
 __all__ = ["render"]
 
@@ -44,7 +44,7 @@ def render(results: list[RepoHealth], console: Console | None = None) -> None:
             # fallback rich uses when it can't detect a terminal size.
             console.width = 140
     primary_owner = _primary_owner(results)
-    title = f"github-admin -- {len(results)} repos" + (f" ({primary_owner})" if primary_owner else "")
+    title = f"repo-healthcheck -- {len(results)} repos" + (f" ({primary_owner})" if primary_owner else "")
     table = Table(title=title)
 
     # repo names get a fixed, unwrapped column so they stay legible, capped
