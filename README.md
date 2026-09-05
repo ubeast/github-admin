@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/ubeast/repo-healthcheck/main/docs/images/logo-512.png" alt="repo-healthcheck logo" width="96">
+</p>
+
 # repo-healthcheck
 
 [![CI](https://github.com/ubeast/repo-healthcheck/actions/workflows/ci.yml/badge.svg)](https://github.com/ubeast/repo-healthcheck/actions/workflows/ci.yml)
