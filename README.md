@@ -1,6 +1,7 @@
 # <img src="https://raw.githubusercontent.com/ubeast/repo-healthcheck/main/docs/images/logo-512.png" alt="" width="36" valign="bottom"> repo-healthcheck
 
 [![CI](https://github.com/ubeast/repo-healthcheck/actions/workflows/ci.yml/badge.svg)](https://github.com/ubeast/repo-healthcheck/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/repo-healthcheck.svg)](https://pypi.org/project/repo-healthcheck/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](pyproject.toml)
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
@@ -131,6 +132,16 @@ project-list endpoint doesn't include it (a per-project call would be
 needed, not worth it for one column).
 
 ## Install
+
+```bash
+pip install repo-healthcheck
+repo-healthcheck --help
+```
+
+(or `pipx install repo-healthcheck` / `uvx repo-healthcheck` to run it without a
+persistent install)
+
+### From source (for development)
 
 ```bash
 uv sync
