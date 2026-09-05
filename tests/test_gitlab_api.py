@@ -134,6 +134,48 @@ def test_to_repo_info_skips_extra_calls_without_project_id() -> None:
     assert rec.has_claude_md is False
 
 
+def test_gnu_variant_from_text_identifies_gpl_family() -> None:
+    assert gitlab_api._gnu_variant_from_text("GNU GENERAL PUBLIC LICENSE") == "GPL"
+    assert gitlab_api._gnu_variant_from_text("GNU LESSER GENERAL PUBLIC LICENSE") == "LGPL"
+    assert gitlab_api._gnu_variant_from_text("Apache License 2.0") == ""
+
+
+def test_detect_license_returns_detected_without_extra_call(monkeypatch: pytest.MonkeyPatch) -> None:
+    def _boom(*a: object, **k: object) -> str:
+        raise AssertionError("should not fetch file content when a license is already detected")
+
+    monkeypatch.setattr(gitlab_api, "_read_raw_file", _boom)
+    proj = {"license": {"nickname": "MIT License"}}
+    assert gitlab_api._detect_license(proj, "https://gitlab.com", 1, "main", {"license"}, headers={}) == "MIT License"
+
+
+def test_detect_license_falls_back_to_gnu_text_when_undetected(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        gitlab_api, "_find_root_file_exact_name", lambda base_url, pid, ref, prefix, headers: "LICENSE"
+    )
+    monkeypatch.setattr(
+        gitlab_api, "_read_raw_file", lambda base_url, pid, filename, ref, headers: "GNU GENERAL PUBLIC LICENSE"
+    )
+    proj = {"license": None}
+    assert gitlab_api._detect_license(proj, "https://gitlab.com", 1, "main", {"license"}, headers={}) == "GPL"
+
+
+def test_detect_license_skips_without_project_id() -> None:
+    proj = {"license": None}
+    assert gitlab_api._detect_license(proj, "https://gitlab.com", None, "main", {"license"}, headers={}) == ""
+
+
+def test_detect_license_skips_without_license_file() -> None:
+    proj = {"license": None}
+    assert gitlab_api._detect_license(proj, "https://gitlab.com", 1, "main", set(), headers={}) == ""
+
+
+def test_find_root_file_exact_name_matches_case_insensitively(monkeypatch: pytest.MonkeyPatch) -> None:
+    entries = [{"name": "LICENSE", "type": "blob"}, {"name": "src", "type": "tree"}]
+    monkeypatch.setattr(gitlab_api, "_get_json", lambda url, headers: (entries, {}))
+    assert gitlab_api._find_root_file_exact_name("https://gitlab.com", 1, "main", "license", headers={}) == "LICENSE"
+
+
 def test_fetch_repos_requires_token_or_owner() -> None:
     with pytest.raises(gitlab_api.ApiError):
         gitlab_api.fetch_repos(token=None, owner=None)

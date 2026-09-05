@@ -148,6 +148,50 @@ def test_to_repo_info_maps_fields(monkeypatch: pytest.MonkeyPatch) -> None:
     assert rec.created == "2020-01-02"
 
 
+def test_gnu_variant_from_text_identifies_gpl_family() -> None:
+    assert github_api._gnu_variant_from_text("                    GNU GENERAL PUBLIC LICENSE\n") == "GPL"
+    assert github_api._gnu_variant_from_text("GNU LESSER GENERAL PUBLIC LICENSE") == "LGPL"
+    assert github_api._gnu_variant_from_text("GNU AFFERO GENERAL PUBLIC LICENSE") == "AGPL"
+    assert github_api._gnu_variant_from_text("MIT License") == ""
+
+
+def test_gnu_variant_from_text_ignores_agpl_mention_in_gplv3_body() -> None:
+    # GPLv3's own section 13 references "the GNU Affero General Public
+    # License" as a compatibility clause -- a whole-document search would
+    # wrongly call this AGPL. Real repro: ubeast/dbricks_utils.
+    text = "GNU GENERAL PUBLIC LICENSE\nVersion 3" + ("x" * 500) + "13. Use with the GNU Affero General Public License."
+    assert github_api._gnu_variant_from_text(text) == "GPL"
+
+
+def test_detect_license_returns_spdx_id_without_extra_call(monkeypatch: pytest.MonkeyPatch) -> None:
+    def _boom(*a: object, **k: object) -> str:
+        raise AssertionError("should not fetch license content when spdx_id is present")
+
+    monkeypatch.setattr(github_api, "_fetch_license_text", _boom)
+    raw = {"license": {"spdx_id": "MIT"}}
+    assert github_api._detect_license(raw, "octocat/widget", headers={}) == "MIT"
+
+
+def test_detect_license_falls_back_to_gnu_text_on_noassertion(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        github_api, "_fetch_license_text", lambda full_name, headers: "GNU GENERAL PUBLIC LICENSE\nVersion 3"
+    )
+    raw = {"license": {"spdx_id": "NOASSERTION", "name": "Other"}}
+    assert github_api._detect_license(raw, "octocat/widget", headers={}) == "GPL"
+
+
+def test_detect_license_keeps_noassertion_when_text_is_not_gnu(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(github_api, "_fetch_license_text", lambda full_name, headers: "Some custom license")
+    raw = {"license": {"spdx_id": "NOASSERTION", "name": "Other"}}
+    assert github_api._detect_license(raw, "octocat/widget", headers={}) == "NOASSERTION"
+
+
+def test_detect_license_keeps_noassertion_when_no_license_file(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(github_api, "_fetch_license_text", lambda full_name, headers: "")
+    raw = {"license": {"spdx_id": "NOASSERTION"}}
+    assert github_api._detect_license(raw, "octocat/widget", headers={}) == "NOASSERTION"
+
+
 def test_fetch_repos_requires_token_or_owner() -> None:
     with pytest.raises(github_api.ApiError):
         github_api.fetch_repos(token=None, owner=None)

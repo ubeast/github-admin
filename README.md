@@ -29,7 +29,7 @@ Two HTML export options:
 | README | repo has no `README*` at the root | without one, nobody (including future-you) knows what the repo does or how to run it |
 | CLAUDE.md | repo has no `CLAUDE.md` at the root | Claude Code has no project context to work from, so it has to re-derive conventions every session |
 | main branch protected | force pushes or branch deletion are allowed on the default branch (see below) | without it, a single bad `push --force` or accidental delete can destroy history with no recovery path |
-| license | GitHub doesn't detect a license | with none, the legal default is "all rights reserved" -- others can't safely reuse or contribute even if that's not what you intended |
+| license | no license file, or one GitHub/GitLab can't classify and isn't a recognizable GNU license (see below) | with none, the legal default is "all rights reserved" -- others can't safely reuse or contribute even if that's not what you intended |
 | contributors | only the owner has ever committed (forks are exempt) | a signal for whether the project has any outside review or use, not a requirement -- solo tools are fine, it's just informational |
 | description | the repo description is empty | the description is what shows up in search and repo lists -- without it, the repo is unidentifiable at a glance |
 | topics | no topics are set | topics are how repos get surfaced in GitHub search and org-wide browsing; with none, the repo is invisible there |
@@ -55,6 +55,19 @@ a free plan will show `?` (unknown) here rather than a real answer. Public
 repos always get a definitive answer. (GitLab has no equivalent paid-plan
 gate, so `?` there means a genuine permission problem, not an expected
 plan restriction.)
+
+**License detection has one narrow fallback beyond trusting the host's own
+classification.** GitHub sometimes reports a standard, unmodified GNU
+license as `NOASSERTION` ("Other") -- its detector isn't perfect. Since GNU
+licenses always state their own name in the title ("GNU GENERAL PUBLIC
+LICENSE", etc.), the tool fetches the actual license file text in that case
+and checks for that name, resolving it to `GPL` / `LGPL` / `AGPL` / `GFDL`
+instead of leaving it unrecognized. This is deliberately narrow -- it isn't
+a general license classifier, just a targeted fix for a real, observed gap
+(GitHub's `/license` endpoint resolves the file case-insensitively; GitLab's
+raw-file endpoint needs the exact-cased name, recovered from a root-tree
+lookup done only in this fallback path). Any other unrecognized license
+still shows as unrecognized, as before.
 
 Archived repos are shown but never flagged -- an archived repo won't be
 improved, so there's no point calling out what it's missing.

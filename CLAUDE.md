@@ -39,6 +39,34 @@ structure / staleness). See `README.md` for usage and the check list.
   tool repo, like this project's own source `one-file-tools`, correctly
   has none). It's surfaced as an informational column in `render_html.py`
   instead of being enforced.
+- **License detection has one narrow, deliberately scoped fallback (2026-09,
+  fixes issue #1).** GitHub's license detector reports `NOASSERTION` for
+  some unmodified, standard-text GNU licenses -- confirmed on
+  `ubeast/dbricks_utils`, whose `LICENSE` is the literal, unedited GPLv3
+  text but which GitHub's API classifies as `NOASSERTION`/"Other". Since
+  GNU licenses always state their own name in the title, `_detect_license`
+  (`github_api.py`, `gitlab_api.py`) fetches the actual file text in that
+  one case and checks for the GNU family name, resolving to `GPL` / `LGPL`
+  / `AGPL` / `GFDL` instead of leaving it unrecognized. Two things worth
+  knowing if touching this:
+  - **The check is capped at the first 300 characters, not the whole
+    file, on purpose.** GPLv3's own text (section 13) references "the GNU
+    Affero General Public License" in a compatibility clause -- a
+    whole-document search misidentifies plain GPL as AGPL (this was an
+    actual bug caught while building this, not a hypothetical). The
+    license's own name always appears in the title, so nothing legitimate
+    is missed by not scanning the body.
+  - **GitHub and GitLab fetch the file differently, and it matters.**
+    GitHub uses its dedicated `/repos/{full_name}/license` endpoint, which
+    resolves the actual license file case-insensitively and returns its
+    content regardless of detection confidence -- exactly what this
+    fallback needs, in one call. GitLab has no equivalent shortcut; its
+    raw-file endpoint needs an exact-cased git blob path, which
+    `_root_listing`'s lowercased set has already lost, so `gitlab_api.py`
+    does an extra root-tree lookup (`_find_root_file_exact_name`) to
+    recover the real casing -- only in this fallback path, not the common
+    case. Don't try to unify these two into one shared implementation;
+    they're solving the same problem against genuinely different APIs.
 - **`branch_protected` is `bool | None`, not `bool`** -- same pattern as
   `contributors`. `None` means "couldn't determine," not "unprotected."
   In practice this is common: GitHub's branch-protection API is a

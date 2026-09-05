@@ -318,8 +318,67 @@ def _root_listing(full_name: str, headers: dict[str, str]) -> tuple[set[str], se
     return files, dirs
 
 
-def _to_repo_info(raw: dict[str, Any], headers: dict[str, str]) -> RepoInfo:
+def _fetch_license_text(full_name: str, headers: dict[str, str]) -> str:
+    """Fetch the repo's license file content via GitHub's dedicated ``/license`` endpoint.
+
+    Deliberately not the plain contents API (``/contents/LICENSE``): that
+    needs the exact, correctly-cased filename, which isn't reliably knowable
+    from a root listing (``LICENSE`` vs ``License.md`` vs lowercase, etc.).
+    ``/license`` resolves whatever file GitHub itself considers the license,
+    case-insensitively, and returns its content regardless of whether GitHub's
+    SPDX detection succeeded -- exactly the "file exists but is unclassified"
+    case this fallback exists for.
+    """
+    import base64
+
+    try:
+        data, _ = _get_json(f"{GITHUB_API}/repos/{full_name}/license", headers)
+    except ApiError:
+        return ""
+    if not isinstance(data, dict):
+        return ""
+    try:
+        return base64.b64decode(data.get("content", "")).decode("utf-8", "replace")
+    except (ValueError, TypeError):
+        return ""
+
+
+def _gnu_variant_from_text(text: str) -> str:
+    """Identify a GNU license family from its own declared name in the file text.
+
+    GitHub's detector reports ``NOASSERTION`` (shown as "Other") for some
+    unmodified, standard-text GNU licenses -- its heuristic isn't perfect.
+    But GNU licenses always state their own name in the title, so a plain
+    substring check is a reliable fallback that doesn't need full SPDX
+    matching -- narrow by design, not a general license classifier.
+
+    Deliberately only checks the first 300 characters, not the whole file:
+    GPL's own text (section 13) references "the GNU Affero General Public
+    License" in a compatibility clause, so a whole-document search would
+    misidentify plain GPL as AGPL. The title always appears in the first
+    line or two; nothing legitimate is missed by not scanning the body.
+    """
+    upper = text[:300].upper()
+    if "GNU AFFERO GENERAL PUBLIC LICENSE" in upper:
+        return "AGPL"
+    if "GNU LESSER GENERAL PUBLIC LICENSE" in upper:
+        return "LGPL"
+    if "GNU GENERAL PUBLIC LICENSE" in upper:
+        return "GPL"
+    if "GNU FREE DOCUMENTATION LICENSE" in upper:
+        return "GFDL"
+    return ""
+
+
+def _detect_license(raw: dict[str, Any], full_name: str, headers: dict[str, str]) -> str:
     lic = raw.get("license") or {}
+    detected = lic.get("spdx_id") or lic.get("name") or ""
+    if detected and detected != "NOASSERTION":
+        return detected
+    return _gnu_variant_from_text(_fetch_license_text(full_name, headers)) or detected
+
+
+def _to_repo_info(raw: dict[str, Any], headers: dict[str, str]) -> RepoInfo:
     full_name = raw.get("full_name") or f"{(raw.get('owner') or {}).get('login', '')}/{raw.get('name', '')}"
     files, dirs = _root_listing(full_name, headers)
     return RepoInfo(
@@ -330,7 +389,7 @@ def _to_repo_info(raw: dict[str, Any], headers: dict[str, str]) -> RepoInfo:
         visibility=raw.get("visibility") or ("private" if raw.get("private") else "public"),
         is_fork=bool(raw.get("fork")),
         archived=bool(raw.get("archived")),
-        license=lic.get("spdx_id") or lic.get("name") or "",
+        license=_detect_license(raw, full_name, headers),
         has_readme=any(f.startswith("readme") for f in files),
         has_claude_md="claude.md" in files,
         has_src_layout="src" in dirs,

@@ -236,12 +236,96 @@ def _branch_protection(base_url: str, project_id: int, branch: str, headers: dic
     return not bool(data.get("allow_force_push", False))
 
 
+def _license_file_name(files: set[str]) -> str | None:
+    return next((f for f in files if f == "license" or f.startswith("license.")), None)
+
+
+def _read_raw_file(base_url: str, project_id: int, filename: str, ref: str, headers: dict[str, str]) -> str:
+    """Fetch one root-level file's raw text content.
+
+    ``filename`` must be exactly cased -- GitLab's raw-file endpoint is a
+    real git blob path lookup, unlike GitHub's dedicated ``/license``
+    endpoint which resolves case-insensitively. See
+    ``_find_root_file_exact_name`` for recovering the real casing from a
+    lowercased root listing.
+    """
+    url = (
+        f"{_api(base_url)}/projects/{project_id}/repository/files/"
+        f"{urllib.parse.quote(filename, safe='')}/raw?ref={urllib.parse.quote(ref)}"
+    )
+    status, _, body = _request(url, headers)
+    if status != 200:
+        return ""
+    return body.decode("utf-8", "replace")
+
+
+def _find_root_file_exact_name(
+    base_url: str, project_id: int, ref: str, prefix: str, headers: dict[str, str]
+) -> str | None:
+    """Recover a root-level file's real-cased name from its lowercase prefix.
+
+    ``_root_listing`` lowercases names for the boolean structural checks,
+    which loses the casing needed to actually fetch one file's content (e.g.
+    ``LICENSE`` vs ``License.md``). Only called in the rare license-fallback
+    path, so the extra tree request doesn't cost anything for the common case.
+    """
+    if not ref:
+        return None
+    url = f"{_api(base_url)}/projects/{project_id}/repository/tree?ref={urllib.parse.quote(ref)}&per_page=100"
+    try:
+        data, _ = _get_json(url, headers)
+    except ApiError:
+        return None
+    if not isinstance(data, list):
+        return None
+    for entry in data:
+        name = entry.get("name", "")
+        if entry.get("type") == "blob" and name.lower().startswith(prefix):
+            return name
+    return None
+
+
+def _gnu_variant_from_text(text: str) -> str:
+    """Identify a GNU license family from its own declared name in the file text.
+
+    Same rationale and same 300-character cap as
+    ``github_api._gnu_variant_from_text`` -- GPL's own text (section 13)
+    references "the GNU Affero General Public License" in a compatibility
+    clause, so scanning the whole file would misidentify plain GPL as AGPL.
+    The title always appears in the first line or two.
+    """
+    upper = text[:300].upper()
+    if "GNU AFFERO GENERAL PUBLIC LICENSE" in upper:
+        return "AGPL"
+    if "GNU LESSER GENERAL PUBLIC LICENSE" in upper:
+        return "LGPL"
+    if "GNU GENERAL PUBLIC LICENSE" in upper:
+        return "GPL"
+    if "GNU FREE DOCUMENTATION LICENSE" in upper:
+        return "GFDL"
+    return ""
+
+
+def _detect_license(
+    proj: dict[str, Any], base_url: str, project_id: Any, ref: str, files: set[str], headers: dict[str, str]
+) -> str:
+    lic = proj.get("license") or {}
+    detected = lic.get("nickname") or lic.get("name") or lic.get("key") or ""
+    if detected or not isinstance(project_id, int):
+        return detected
+    if not _license_file_name(files):
+        return detected
+    exact_name = _find_root_file_exact_name(base_url, project_id, ref, "license", headers)
+    if not exact_name:
+        return detected
+    return _gnu_variant_from_text(_read_raw_file(base_url, project_id, exact_name, ref, headers)) or detected
+
+
 def _to_repo_info(base_url: str, proj: dict[str, Any], headers: dict[str, str]) -> RepoInfo:
     namespace = proj.get("namespace") or {}
     owner = namespace.get("full_path") or namespace.get("path") or ""
     name = proj.get("path") or proj.get("name") or ""
     full_name = f"{owner}/{name}" if owner else name
-    lic = proj.get("license") or {}
     topics = proj.get("topics")
     if not topics:
         topics = proj.get("tag_list") or []
@@ -265,7 +349,7 @@ def _to_repo_info(base_url: str, proj: dict[str, Any], headers: dict[str, str]) 
         visibility=proj.get("visibility") or "",
         is_fork=bool(proj.get("forked_from_project")),
         archived=bool(proj.get("archived")),
-        license=lic.get("nickname") or lic.get("name") or lic.get("key") or "",
+        license=_detect_license(proj, base_url, project_id, default_branch, files, headers),
         has_readme=bool(proj.get("readme_url")) or any(f.startswith("readme") for f in files),
         has_claude_md="claude.md" in files,
         has_src_layout="src" in dirs,
