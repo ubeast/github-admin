@@ -17,10 +17,16 @@ Two HTML export options:
 
 - `--html report.html` -- a plain static table, every issue spelled out as text.
 - `--dashboard report.html` -- an interactive page: a compact checklist per
-  repo, click-to-filter chips (missing / has, multi-select), and click any
-  column header to sort (click another header to add it as a tie-breaker,
-  building a multi-column sort in click order). This is the one worth
-  opening in a browser and actually using, not just reading.
+  repo, click-to-filter chips (missing / has, multi-select), a "Forks only" /
+  "Originals only" toggle, and click any column header to sort (click
+  another header to add it as a tie-breaker, building a multi-column sort
+  in click order). This is the one worth opening in a browser and actually
+  using, not just reading.
+
+Repo names are shown without the owner prefix for whichever account most of
+the report's repos belong to (hover, or the terminal table's title, still
+shows the full name) -- a repo under any other owner keeps `owner/name` so
+it isn't confused with that account's repo of the same short name.
 
 ## What it checks
 

@@ -43,8 +43,22 @@ def test_render_includes_repo_name_and_doctype() -> None:
     r = _repo()
     result = RepoHealth(repo=r, issues=["no README", "no license"])
     out = render_dashboard.render([result])
-    assert "octocat/widget" in out
+    # single-owner report: shown by short name, full name kept in its title attribute
+    assert ">widget<" in out
+    assert 'title="octocat/widget"' in out
     assert "<!doctype html>" in out
+
+
+def test_render_shows_full_name_only_for_non_primary_owner() -> None:
+    primary = RepoHealth(repo=_repo(owner="acme", full_name="acme/one", name="one"), issues=[])
+    other = RepoHealth(repo=_repo(owner="acme", full_name="acme/two", name="two"), issues=[])
+    outsider = RepoHealth(repo=_repo(owner="beta", full_name="beta/three", name="three"), issues=[])
+    out = render_dashboard.render([primary, other, outsider])
+    assert ">beta/three<" in out
+    assert ">one<" in out
+    assert ">two<" in out
+    assert ">acme/one<" not in out
+    assert ">acme/two<" not in out
 
 
 def test_render_escapes_html_in_fields() -> None:
@@ -75,6 +89,18 @@ def test_render_handles_empty_results_without_crashing() -> None:
     out = render_dashboard.render([])
     assert "<!doctype html>" in out
     assert ">0<" in out  # repo count
+
+
+def test_render_includes_fork_filter_markup_and_counts() -> None:
+    forked = RepoHealth(repo=_repo(full_name="acme/fork", is_fork=True), issues=[])
+    original = RepoHealth(repo=_repo(full_name="acme/original", is_fork=False), issues=[])
+    out = render_dashboard.render([forked, original])
+    assert 'data-fork="true"' in out
+    assert 'data-fork="false"' in out
+    assert 'id="forks-only-chip"' in out
+    assert 'id="originals-only-chip"' in out
+    assert 'data-fork-filter="forks"' in out
+    assert 'data-fork-filter="originals"' in out
 
 
 def test_render_includes_sort_data_attributes() -> None:

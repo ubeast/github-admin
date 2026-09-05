@@ -49,7 +49,9 @@ def test_report_prints_table(monkeypatch: pytest.MonkeyPatch) -> None:
 
     result = runner.invoke(app, [])
     assert result.exit_code == 0
-    assert "octocat/widget" in result.output
+    # single-owner report: shown by short name, owner surfaced in the title instead
+    assert "widget" in result.output
+    assert "octocat" in result.output
 
 
 def test_report_errors_without_token(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -85,8 +87,10 @@ def test_report_merges_gitlab_when_requested(monkeypatch: pytest.MonkeyPatch) ->
 
     result = runner.invoke(app, ["--gitlab"])
     assert result.exit_code == 0
-    assert "octocat/widget" in result.output
-    assert "myteam/widget" in result.output
+    # One of the two tied owners is shown by short name, the other keeps its
+    # owner/ prefix so the two "widget" repos aren't mistaken for each other.
+    assert "widget" in result.output
+    assert "octocat/widget" in result.output or "myteam/widget" in result.output
 
 
 def test_report_errors_without_gitlab_token(monkeypatch: pytest.MonkeyPatch) -> None:

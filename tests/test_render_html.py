@@ -42,9 +42,22 @@ def test_render_html_includes_repo_and_issues() -> None:
     r = _repo()
     result = RepoHealth(repo=r, issues=["no README", "no license"])
     out = render_html.render([result])
-    assert "octocat/widget" in out
+    # single-owner report: shown by short name in the link text, full name kept in its title attribute
+    assert ">widget<" in out
+    assert 'title="octocat/widget"' in out
     assert "no README" in out
     assert "<!doctype html>" in out
+
+
+def test_render_html_shows_full_name_for_non_primary_owner() -> None:
+    primary = RepoHealth(repo=_repo(owner="acme", full_name="acme/one", name="one"), issues=[])
+    other = RepoHealth(repo=_repo(owner="acme", full_name="acme/two", name="two"), issues=[])
+    outsider = RepoHealth(repo=_repo(owner="beta", full_name="beta/three", name="three"), issues=[])
+    out = render_html.render([primary, other, outsider])
+    assert ">beta/three<" in out
+    assert ">one<" in out
+    assert ">two<" in out
+    assert ">acme/one<" not in out
 
 
 def test_render_html_escapes_html_in_fields() -> None:

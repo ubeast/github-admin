@@ -10,6 +10,7 @@ framework, works by opening the file in a browser.
 
 from __future__ import annotations
 
+from collections import Counter
 from collections.abc import Callable
 from datetime import datetime
 from html import escape
@@ -17,6 +18,18 @@ from html import escape
 from github_admin.health import RepoHealth
 
 __all__ = ["render"]
+
+
+def _primary_owner(results: list[RepoHealth]) -> str:
+    """The most-represented owner across the report -- "the account" this
+    run is mostly about. Used to shorten that owner's repo names to just
+    ``name`` in the table, since repeating the same owner on every row
+    wastes space; a repo under any other owner (a different org, or a
+    GitLab account alongside a mostly-GitHub report) keeps the full
+    ``owner/name`` so it's still clear it isn't part of the main account.
+    """
+    counts = Counter(h.repo.owner for h in results)
+    return counts.most_common(1)[0][0] if counts else ""
 
 # Every check the dashboard displays, in one place. "grid" checks are pure
 # booleans and render as the compact multi-box glyph, grouped by `group`;
@@ -130,7 +143,10 @@ def render(results: list[RepoHealth]) -> str:
     healthy = sum(1 for h in results if h.is_healthy)
     avg_issues = (sum(h.issue_count for h in results) / total) if total else 0.0
     counts = {key: _counts_for(results, fn) for key, *_rest, fn in CHECKS}
+    fork_count = sum(1 for h in results if h.repo.is_fork)
+    original_count = total - fork_count
     owners = ", ".join(sorted({h.repo.owner for h in results})) or "none"
+    primary_owner = _primary_owner(results)
     generated = datetime.now().strftime("%Y-%m-%d %H:%M")
 
     chk_legend_header = _with_group_gaps(
@@ -162,6 +178,7 @@ def render(results: list[RepoHealth]) -> str:
         contrib = repo.contributors if repo.contributors is not None else "?"
         fork_note = " &middot; fork" if repo.is_fork else ""
         platform_note = f" &middot; {repo.platform}" if repo.platform != "github" else ""
+        display_name = repo.name if repo.owner == primary_owner else repo.full_name
         desc = escape(repo.description) if repo.description else '<span class="muted">no description</span>'
         topics_html = (
             "".join(f'<span class="topic">{escape(t)}</span>' for t in repo.topics[:4])
@@ -195,10 +212,10 @@ def render(results: list[RepoHealth]) -> str:
         sort_data = " ".join(f'data-sort-{k}="{v}"' for k, v in sort_attrs.items())
 
         rows.append(f"""
-<tr class="{_sev_class(n)}" data-name="{escape(repo.full_name.lower())}" data-gaps="{gap_keys}" data-excluded="{excluded_keys}" {sort_data}>
+<tr class="{_sev_class(n)}" data-name="{escape(repo.full_name.lower())}" data-gaps="{gap_keys}" data-excluded="{excluded_keys}" data-fork="{"true" if repo.is_fork else "false"}" {sort_data}>
   <td class="stripe" aria-hidden="true"></td>
   <td class="col-repo">
-    <a class="repo-link" href="{escape(repo.url)}">{escape(repo.full_name)}</a>{fork_note}{platform_note}
+    <a class="repo-link" href="{escape(repo.url)}" title="{escape(repo.full_name)}">{escape(display_name)}</a>{fork_note}{platform_note}
     <div class="desc">{desc}</div>
   </td>
   <td class="col-checks">{grid_badges}</td>
@@ -313,11 +330,17 @@ def render(results: list[RepoHealth]) -> str:
 
     <div class="controls">
       <input id="search" type="text" placeholder="filter by repo name&hellip;" aria-label="Filter by repo name">
+      <button class="chip fork-toggle" id="forks-only-chip" data-fork-filter="forks">
+        <span class="chip-icon" aria-hidden="true"></span>Forks only <span class="chip-n">{fork_count}</span>
+      </button>
+      <button class="chip fork-toggle" id="originals-only-chip" data-fork-filter="originals">
+        <span class="chip-icon" aria-hidden="true"></span>Originals only <span class="chip-n">{original_count}</span>
+      </button>
       {chips}
       <button id="clear-filter">clear filter</button>
       <button id="reset-sort">reset sort</button>
       <span id="result-count"></span>
-      <div class="chip-hint">click once for <b style="color: var(--bad)">missing</b>, twice for <b style="color: var(--good)">has it</b>, three times to clear &mdash; combine multiple. Rows shown "n/a" for a filter never match either state.</div>
+      <div class="chip-hint">click once for <b style="color: var(--bad)">missing</b>, twice for <b style="color: var(--good)">has it</b>, three times to clear &mdash; combine multiple. Rows shown "n/a" for a filter never match either state. "Forks only" / "Originals only" toggle independently of that and clear with the other filters.</div>
     </div>
 
     <div class="table-scroll">
@@ -567,6 +590,8 @@ h2 {
 .chip.state-missing .chip-icon { background: var(--bad); border-color: var(--bad); }
 .chip.state-has { background: var(--good-soft); border-color: var(--good); color: var(--good); }
 .chip.state-has .chip-icon { background: var(--good); border-color: var(--good); }
+.chip.state-active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.chip.state-active .chip-icon { background: var(--accent); border-color: var(--accent); }
 .chip-n { font-family: "IBM Plex Mono", monospace; opacity: 0.8; }
 .chip-hint { font-size: 0.72rem; color: var(--ink-soft); opacity: 0.75; width: 100%; }
 #clear-filter, #reset-sort {
@@ -726,10 +751,13 @@ _SCRIPT = """
   // that have a README but still need a license.
   var rows = Array.prototype.slice.call(document.querySelectorAll('#repo-table tbody tr'));
   var search = document.getElementById('search');
-  var chips = Array.prototype.slice.call(document.querySelectorAll('.chip'));
+  var chips = Array.prototype.slice.call(document.querySelectorAll('[data-filter]'));
   var clearBtn = document.getElementById('clear-filter');
   var resultCount = document.getElementById('result-count');
   var filters = {}; // key -> 1 (missing) | 2 (has)
+  var forkFilter = null; // null | 'forks' | 'originals' -- separate from the health-check chips above,
+                          // since "is a fork" isn't a pass/fail check, just a repo attribute to narrow by
+  var forkToggles = Array.prototype.slice.call(document.querySelectorAll('.fork-toggle'));
 
   function updateChipVisual(chip) {
     var key = chip.getAttribute('data-filter');
@@ -760,12 +788,14 @@ _SCRIPT = """
         var missing = gapSet.indexOf(' ' + key + ' ') !== -1;
         return filters[key] === 1 ? missing : !missing;
       });
-      var show = nameMatch && gapMatch;
+      var isFork = row.getAttribute('data-fork') === 'true';
+      var forkMatch = !forkFilter || (forkFilter === 'forks' ? isFork : !isFork);
+      var show = nameMatch && gapMatch && forkMatch;
       row.classList.toggle('hidden', !show);
       if (show) visible++;
     });
     resultCount.textContent = visible + ' / ' + rows.length + ' shown';
-    clearBtn.style.display = (keys.length || term) ? 'inline-block' : 'none';
+    clearBtn.style.display = (keys.length || term || forkFilter) ? 'inline-block' : 'none';
   }
 
   search.addEventListener('input', applyFilters);
@@ -784,10 +814,27 @@ _SCRIPT = """
     });
   });
 
+  function updateForkToggleVisuals() {
+    forkToggles.forEach(function(btn) {
+      btn.classList.toggle('state-active', btn.getAttribute('data-fork-filter') === forkFilter);
+    });
+  }
+
+  forkToggles.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var which = btn.getAttribute('data-fork-filter');
+      forkFilter = forkFilter === which ? null : which;
+      updateForkToggleVisuals();
+      applyFilters();
+    });
+  });
+
   clearBtn.addEventListener('click', function() {
     filters = {};
+    forkFilter = null;
     search.value = '';
     chips.forEach(updateChipVisual);
+    updateForkToggleVisuals();
     applyFilters();
   });
 
