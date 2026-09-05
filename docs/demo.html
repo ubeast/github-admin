@@ -1,0 +1,975 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>repo-healthcheck — live demo (sample data)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;0,700;1,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root {
+  --paper: #f1f3ee;
+  --surface: #ffffff;
+  --surface-2: #eaece5;
+  --ink: #1e2a22;
+  --ink-soft: #55635a;
+  --line: #d9dfd2;
+  --accent: #2b5d6b;
+  --accent-soft: #dce9ea;
+  --good: #2f7a4f;
+  --good-soft: #e3f0e6;
+  --warn: #a8721f;
+  --warn-soft: #f5ead4;
+  --bad: #b23a2e;
+  --bad-soft: #f6e1dd;
+  --na: #8c959f;
+  --na-soft: #eceef0;
+  --shadow: 0 1px 2px rgba(30,42,34,0.06), 0 6px 20px rgba(30,42,34,0.05);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #121814;
+    --surface: #1a231c;
+    --surface-2: #212b22;
+    --ink: #e7ede4;
+    --ink-soft: #a7b4a9;
+    --line: #2b3830;
+    --accent: #7fc0cd;
+    --accent-soft: #1d3338;
+    --good: #7dd6a0;
+    --good-soft: #182a1f;
+    --warn: #e0ae5c;
+    --warn-soft: #2e2313;
+    --bad: #e2776a;
+    --bad-soft: #331e1a;
+    --na: #7d8590;
+    --na-soft: #21262c;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 6px 20px rgba(0,0,0,0.35);
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #121814;
+  --surface: #1a231c;
+  --surface-2: #212b22;
+  --ink: #e7ede4;
+  --ink-soft: #a7b4a9;
+  --line: #2b3830;
+  --accent: #7fc0cd;
+  --accent-soft: #1d3338;
+  --good: #7dd6a0;
+  --good-soft: #182a1f;
+  --warn: #e0ae5c;
+  --warn-soft: #2e2313;
+  --bad: #e2776a;
+  --bad-soft: #331e1a;
+  --na: #7d8590;
+  --na-soft: #21262c;
+  --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 6px 20px rgba(0,0,0,0.35);
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+  margin: 0;
+  padding: 2.5rem 1.5rem 4rem;
+}
+.wrap { max-width: 1320px; margin: 0 auto; }
+
+.masthead {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+  border-bottom: 2px solid var(--ink);
+  padding-bottom: 1.1rem;
+  margin-bottom: 1.75rem;
+}
+h1 {
+  font-family: "Fraunces", Georgia, serif;
+  font-weight: 600;
+  font-size: clamp(1.7rem, 3vw, 2.3rem);
+  margin: 0;
+  text-wrap: balance;
+  letter-spacing: -0.01em;
+}
+.eyebrow {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 0.35rem;
+}
+.meta {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+  text-align: right;
+  line-height: 1.6;
+}
+.meta b { color: var(--ink); font-weight: 600; }
+.sample-badge {
+  display: inline-block;
+  margin-top: 0.6rem;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.03em;
+  color: var(--warn);
+  background: var(--warn-soft);
+  border: 1px solid var(--warn);
+  border-radius: 999px;
+  padding: 0.2rem 0.65rem;
+}
+.back-link {
+  display: inline-block;
+  margin-bottom: 1.2rem;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.8rem;
+  color: var(--accent);
+  text-decoration: none;
+}
+.back-link:hover { text-decoration: underline; }
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 2.25rem;
+  box-shadow: var(--shadow);
+}
+.stat { background: var(--surface); padding: 1.1rem 1.3rem; }
+.stat-value {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 1.7rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.stat-value.bad { color: var(--bad); }
+.stat-value.accent { color: var(--accent); }
+.stat-label { font-size: 0.78rem; color: var(--ink-soft); margin-top: 0.45rem; }
+
+section.block { margin-bottom: 2.25rem; }
+h2 {
+  font-family: "Fraunces", Georgia, serif;
+  font-weight: 600;
+  font-size: 1.15rem;
+  margin: 0 0 0.2rem;
+}
+.block-sub { font-size: 0.85rem; color: var(--ink-soft); margin: 0 0 1rem; max-width: 70ch; }
+
+.legend {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 0.75rem;
+}
+.legend-item {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.8rem 0.9rem;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.15rem 0.7rem;
+  align-items: start;
+}
+.legend-letter {
+  width: 26px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+  margin-top: 0.1rem;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+.legend-note { font-size: 0.76rem; font-style: italic; color: var(--ink-soft); opacity: 0.8; margin: 0 0 1rem; }
+.legend-label { font-weight: 600; font-size: 0.92rem; }
+.legend-crit { font-size: 0.78rem; color: var(--ink-soft); margin-top: 0.1rem; }
+.legend-gap {
+  grid-column: 2;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.72rem;
+  color: var(--accent);
+  margin-top: 0.35rem;
+}
+
+.controls { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; margin-bottom: 1rem; }
+#search {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.85rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--ink);
+  min-width: 220px;
+}
+#search:focus-visible, .chip:focus-visible, #clear-filter:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.chip {
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: 0.78rem;
+  padding: 0.4rem 0.7rem 0.4rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-soft);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.chip:hover { border-color: var(--accent); color: var(--ink); }
+.chip-icon { width: 13px; height: 13px; border-radius: 3px; border: 1.5px solid var(--line); flex: none; }
+.chip.state-missing { background: var(--bad-soft); border-color: var(--bad); color: var(--bad); }
+.chip.state-missing .chip-icon { background: var(--bad); border-color: var(--bad); }
+.chip.state-has { background: var(--good-soft); border-color: var(--good); color: var(--good); }
+.chip.state-has .chip-icon { background: var(--good); border-color: var(--good); }
+.chip.state-active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.chip.state-active .chip-icon { background: var(--accent); border-color: var(--accent); }
+.chip-n { font-family: "IBM Plex Mono", monospace; opacity: 0.8; }
+.chip-hint { font-size: 0.72rem; color: var(--ink-soft); opacity: 0.75; width: 100%; }
+#clear-filter, #reset-sort {
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: 0.78rem;
+  color: var(--accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0.4rem 0.2rem;
+  display: none;
+}
+#result-count { font-family: "IBM Plex Mono", monospace; font-size: 0.76rem; color: var(--ink-soft); margin-left: auto; }
+
+.table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); }
+table { border-collapse: collapse; width: 100%; min-width: 1180px; background: var(--surface); }
+thead th {
+  position: sticky;
+  top: 0;
+  background: var(--surface-2);
+  text-align: left;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--ink-soft);
+  font-weight: 600;
+  padding: 0.7rem 0.7rem;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+th.sortable { cursor: pointer; user-select: none; }
+th.sortable:hover { color: var(--ink); background: var(--accent-soft); }
+th.sortable:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.sort-ind {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 0.3rem;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.68rem;
+  color: var(--accent);
+  vertical-align: middle;
+}
+.sort-ind .sort-arrow { font-size: 0.62rem; }
+.sort-ind .sort-priority {
+  background: var(--accent);
+  color: var(--surface);
+  border-radius: 999px;
+  width: 12px;
+  height: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.58rem;
+  line-height: 1;
+}
+tbody td { padding: 0.65rem 0.7rem; border-bottom: 1px solid var(--line); vertical-align: top; font-size: 0.86rem; }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr.hidden { display: none; }
+td.stripe { width: 4px; padding: 0; }
+tr.sev-bad td.stripe { background: var(--bad); }
+tr.sev-warn td.stripe { background: var(--warn); }
+tr.sev-good td.stripe { background: var(--good); }
+
+.col-repo { min-width: 220px; }
+.repo-link { font-family: "IBM Plex Mono", monospace; font-size: 0.86rem; font-weight: 500; color: var(--ink); text-decoration: none; }
+.repo-link:hover { color: var(--accent); text-decoration: underline; }
+.desc { font-size: 0.78rem; color: var(--ink-soft); margin-top: 0.2rem; max-width: 34ch; }
+.muted { color: var(--ink-soft); opacity: 0.7; }
+
+th.col-checks-header { white-space: nowrap; text-transform: none; letter-spacing: normal; }
+.chk-legend {
+  display: inline-block;
+  width: 16px;
+  margin-right: 3px;
+  text-align: center;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.58rem;
+  color: var(--accent);
+  cursor: help;
+}
+.col-checks { white-space: nowrap; }
+.chk { display: inline-block; margin-right: 3px; }
+.chk-group-gap { display: inline-block; width: 8px; }
+.box {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  border: 1.5px solid var(--ink-soft);
+  border-radius: 3px;
+  background: transparent;
+  position: relative;
+}
+.box.on { background: var(--good); border-color: var(--good); }
+.box.on::after {
+  content: "";
+  position: absolute;
+  left: 3px; top: 0px;
+  width: 4px; height: 8px;
+  border-right: 1.5px solid var(--surface);
+  border-bottom: 1.5px solid var(--surface);
+  transform: rotate(40deg);
+}
+.chk.no .box { border-color: var(--bad); background: var(--bad-soft); }
+
+.col-badge { white-space: nowrap; }
+.badge-pill { font-family: "IBM Plex Mono", monospace; font-size: 0.74rem; padding: 0.15rem 0.5rem; border-radius: 999px; display: inline-block; }
+.badge-pill.good { background: var(--good-soft); color: var(--good); }
+.badge-pill.bad { background: var(--bad-soft); color: var(--bad); }
+.badge-pill.na { background: var(--na-soft); color: var(--na); }
+
+.col-license .lic { font-family: "IBM Plex Mono", monospace; font-size: 0.78rem; padding: 0.15rem 0.45rem; border-radius: 5px; background: var(--good-soft); color: var(--good); }
+.col-license .lic.missing { background: var(--bad-soft); color: var(--bad); }
+
+.col-num { font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums; text-align: right; }
+
+.col-topics { max-width: 200px; }
+.topic {
+  display: inline-block;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.7rem;
+  background: var(--accent-soft);
+  color: var(--accent);
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  margin: 0 3px 3px 0;
+}
+.topic.muted { background: transparent; color: var(--ink-soft); padding-left: 0; }
+
+.col-src { font-family: "IBM Plex Mono", monospace; font-size: 0.78rem; }
+.info-yes { color: var(--accent); }
+
+.col-pushed { font-family: "IBM Plex Mono", monospace; font-size: 0.78rem; color: var(--ink-soft); white-space: nowrap; }
+
+.gap-count { font-family: "IBM Plex Mono", monospace; font-weight: 600; font-size: 0.82rem; padding: 0.15rem 0.5rem; border-radius: 999px; }
+.gap-count.sev-bad { background: var(--bad-soft); color: var(--bad); }
+.gap-count.sev-warn { background: var(--warn-soft); color: var(--warn); }
+.gap-count.sev-good { background: var(--good-soft); color: var(--good); }
+
+footer { margin-top: 2rem; font-size: 0.76rem; color: var(--ink-soft); text-align: center; }
+footer a { color: var(--accent); }
+
+@media (prefers-reduced-motion: no-preference) {
+  tbody tr { transition: opacity 0.12s ease; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back-link" href="./">&larr; back to repo-healthcheck</a>
+  <div class="masthead">
+    <div>
+      <p class="eyebrow">repo-healthcheck &middot; repo audit</p>
+      <h1>What every repo should have</h1>
+      <span class="sample-badge">Sample data</span>
+    </div>
+    <div class="meta">
+      scope: <b>sample-org, sample-team</b><br>
+      generated <b>2026-09-04 21:23</b><br>
+      <b>12</b> repos audited
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-value">12</div>
+      <div class="stat-label">repos audited</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value bad">5</div>
+      <div class="stat-label">have at least one gap</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">2.8</div>
+      <div class="stat-label">avg. gaps per repo</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value accent">License</div>
+      <div class="stat-label">most common gap &mdash; 5/12 repos</div>
+    </div>
+  </div>
+
+  <section class="block">
+    <h2>The checklist</h2>
+    <p class="block-sub">Every standard this account's repos are measured against, grouped by kind. Archived repos are exempt from all of it &mdash; they won't be improved, so nothing here is held against them. Branch-protection and pyproject.toml can legitimately read "n/a" (a paid-plan limit on private repos, or a non-Python project) rather than pass/fail.</p>
+    <p class="legend-note">Reference only, not clickable &mdash; use the filters in the table below to narrow the list.</p>
+    <div class="legend">
+      <div class="legend-item">
+        <span class="legend-letter">RM</span>
+        <div>
+          <div class="legend-label">README</div>
+          <div class="legend-crit">a README file exists at the repo root</div>
+        </div>
+        <div class="legend-gap">2/12 missing</div>
+      </div><div class="legend-item">
+        <span class="legend-letter">CM</span>
+        <div>
+          <div class="legend-label">CLAUDE.md</div>
+          <div class="legend-crit">repo has a CLAUDE.md for Claude Code</div>
+        </div>
+        <div class="legend-gap">4/12 missing</div>
+      </div><div class="legend-item">
+        <span class="legend-letter">LC</span>
+        <div>
+          <div class="legend-label">License</div>
+          <div class="legend-crit">GitHub detects a recognized license</div>
+        </div>
+        <div class="legend-gap">5/12 missing</div>
+      </div><div class="legend-item">
+        <span class="legend-letter">DS</span>
+        <div>
+          <div class="legend-label">Description</div>
+          <div class="legend-crit">the repo's About description is filled in</div>
+        </div>
+        <div class="legend-gap">1/12 missing</div>
+      </div><div class="legend-item">
+        <span class="legend-letter">TP</span>
+        <div>
+          <div class="legend-label">Topics</div>
+          <div class="legend-crit">at least one topic is set</div>
+        </div>
+        <div class="legend-gap">5/12 missing</div>
+      </div><div class="legend-item">
+        <span class="legend-letter">GI</span>
+        <div>
+          <div class="legend-label">.gitignore</div>
+          <div class="legend-crit">a .gitignore file exists at the repo root</div>
+        </div>
+        <div class="legend-gap">1/12 missing</div>
+      </div><div class="legend-item">
+        <span class="legend-letter">TS</span>
+        <div>
+          <div class="legend-label">Tests</div>
+          <div class="legend-crit">a tests/ or test/ directory exists</div>
+        </div>
+        <div class="legend-gap">4/12 missing</div>
+      </div><div class="legend-item">
+        <span class="legend-letter">CI</span>
+        <div>
+          <div class="legend-label">CI config</div>
+          <div class="legend-crit">a CI config exists at the root (.github/ for GitHub Actions, .gitlab-ci.yml for GitLab CI)</div>
+        </div>
+        <div class="legend-gap">5/12 missing</div>
+      </div><div class="legend-item">
+        <span class="legend-letter">CN</span>
+        <div>
+          <div class="legend-label">Contributors</div>
+          <div class="legend-crit">someone besides the owner has committed</div>
+        </div>
+        <div class="legend-gap">5/12 missing</div>
+      </div><div class="legend-item">
+        <span class="legend-letter">AC</span>
+        <div>
+          <div class="legend-label">Active</div>
+          <div class="legend-crit">pushed within the last 180 days</div>
+        </div>
+        <div class="legend-gap">4/12 missing</div>
+      </div><div class="legend-item">
+        <span class="legend-letter">PR</span>
+        <div>
+          <div class="legend-label">Branch protected</div>
+          <div class="legend-crit">force-push and deletion disallowed on the default branch — private repos on a free GitHub plan can't be checked at all (shown as unknown, not unprotected)</div>
+        </div>
+        <div class="legend-gap">2/12 missing &middot; 1 n/a</div>
+      </div><div class="legend-item">
+        <span class="legend-letter">PY</span>
+        <div>
+          <div class="legend-label">pyproject.toml</div>
+          <div class="legend-crit">Python repos only — has a pyproject.toml at the root</div>
+        </div>
+        <div class="legend-gap">0/12 missing &middot; 5 n/a</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>Every repo, worst first</h2>
+    <p class="block-sub">Sorted by gap count so the repos needing the most attention surface at the top. Click a checklist item below to filter to just the repos missing it, or click any column header to sort by it &mdash; click another header to add it as a tie-breaker, click a sorted header again to reverse it, a third time to drop it.</p>
+    <p class="legend-note">Checklist column codes &mdash; <b>Docs:</b> RM=README, CM=CLAUDE.md &nbsp;|&nbsp; <b>Standards:</b> LC=License, DS=Description, TP=Topics &nbsp;|&nbsp; <b>Structure:</b> GI=.gitignore, TS=Tests, CI=CI config &nbsp;|&nbsp; <b>Activity:</b> CN=Contributors, AC=Active</p>
+
+    <div class="controls">
+      <input id="search" type="text" placeholder="filter by repo name&hellip;" aria-label="Filter by repo name">
+      <button class="chip fork-toggle" id="forks-only-chip" data-fork-filter="forks">
+        <span class="chip-icon" aria-hidden="true"></span>Forks only <span class="chip-n">1</span>
+      </button>
+      <button class="chip fork-toggle" id="originals-only-chip" data-fork-filter="originals">
+        <span class="chip-icon" aria-hidden="true"></span>Originals only <span class="chip-n">11</span>
+      </button>
+      <button class="chip" data-filter="readme" data-missing="2" data-has="10">
+        <span class="chip-icon" aria-hidden="true"></span>README <span class="chip-n">2</span>
+      </button><button class="chip" data-filter="claude_md" data-missing="4" data-has="8">
+        <span class="chip-icon" aria-hidden="true"></span>CLAUDE.md <span class="chip-n">4</span>
+      </button><button class="chip" data-filter="license" data-missing="5" data-has="7">
+        <span class="chip-icon" aria-hidden="true"></span>License <span class="chip-n">5</span>
+      </button><button class="chip" data-filter="description" data-missing="1" data-has="11">
+        <span class="chip-icon" aria-hidden="true"></span>Description <span class="chip-n">1</span>
+      </button><button class="chip" data-filter="topics" data-missing="5" data-has="7">
+        <span class="chip-icon" aria-hidden="true"></span>Topics <span class="chip-n">5</span>
+      </button><button class="chip" data-filter="gitignore" data-missing="1" data-has="11">
+        <span class="chip-icon" aria-hidden="true"></span>.gitignore <span class="chip-n">1</span>
+      </button><button class="chip" data-filter="tests" data-missing="4" data-has="8">
+        <span class="chip-icon" aria-hidden="true"></span>Tests <span class="chip-n">4</span>
+      </button><button class="chip" data-filter="ci" data-missing="5" data-has="7">
+        <span class="chip-icon" aria-hidden="true"></span>CI config <span class="chip-n">5</span>
+      </button><button class="chip" data-filter="contributors" data-missing="5" data-has="7">
+        <span class="chip-icon" aria-hidden="true"></span>Contributors <span class="chip-n">5</span>
+      </button><button class="chip" data-filter="fresh" data-missing="4" data-has="8">
+        <span class="chip-icon" aria-hidden="true"></span>Active <span class="chip-n">4</span>
+      </button><button class="chip" data-filter="protected" data-missing="2" data-has="9">
+        <span class="chip-icon" aria-hidden="true"></span>Branch protected <span class="chip-n">2</span>
+      </button><button class="chip" data-filter="pyproject" data-missing="0" data-has="7">
+        <span class="chip-icon" aria-hidden="true"></span>pyproject.toml <span class="chip-n">0</span>
+      </button>
+      <button id="clear-filter">clear filter</button>
+      <button id="reset-sort">reset sort</button>
+      <span id="result-count"></span>
+      <div class="chip-hint">click once for <b style="color: var(--bad)">missing</b>, twice for <b style="color: var(--good)">has it</b>, three times to clear &mdash; combine multiple. Rows shown "n/a" for a filter never match either state. "Forks only" / "Originals only" toggle independently of that and clear with the other filters.</div>
+    </div>
+
+    <div class="table-scroll">
+      <table id="repo-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th class="sortable" data-sort-key="repo" data-numeric="0" tabindex="0" role="button">Repo<span class="sort-ind"></span></th>
+            <th class="col-checks-header"><span class="chk-legend" title="README — a README file exists at the repo root">RM</span><span class="chk-legend" title="CLAUDE.md — repo has a CLAUDE.md for Claude Code">CM</span><span class="chk-group-gap"></span><span class="chk-legend" title="License — GitHub detects a recognized license">LC</span><span class="chk-legend" title="Description — the repo's About description is filled in">DS</span><span class="chk-legend" title="Topics — at least one topic is set">TP</span><span class="chk-group-gap"></span><span class="chk-legend" title=".gitignore — a .gitignore file exists at the repo root">GI</span><span class="chk-legend" title="Tests — a tests/ or test/ directory exists">TS</span><span class="chk-legend" title="CI config — a CI config exists at the root (.github/ for GitHub Actions, .gitlab-ci.yml for GitLab CI)">CI</span><span class="chk-group-gap"></span><span class="chk-legend" title="Contributors — someone besides the owner has committed">CN</span><span class="chk-legend" title="Active — pushed within the last 180 days">AC</span></th>
+            <th class="sortable" data-sort-key="protected" data-numeric="1" tabindex="0" role="button" title="force-push and deletion disallowed on the default branch — private repos on a free GitHub plan can&#x27;t be checked at all (shown as unknown, not unprotected)">Branch protected<span class="sort-ind"></span></th><th class="sortable" data-sort-key="pyproject" data-numeric="1" tabindex="0" role="button" title="Python repos only — has a pyproject.toml at the root">pyproject.toml<span class="sort-ind"></span></th>
+            <th class="sortable" data-sort-key="license" data-numeric="0" tabindex="0" role="button">License type<span class="sort-ind"></span></th>
+            <th class="sortable" data-sort-key="contributors" data-numeric="1" tabindex="0" role="button">Contrib.<span class="sort-ind"></span></th>
+            <th class="sortable" data-sort-key="forks" data-numeric="1" tabindex="0" role="button">Forks<span class="sort-ind"></span></th>
+            <th class="sortable" data-sort-key="topics" data-numeric="1" tabindex="0" role="button" title="sorts by topic count">Topics<span class="sort-ind"></span></th>
+            <th class="sortable" data-sort-key="src" data-numeric="1" tabindex="0" role="button" title="informational only, not counted as an issue">src/<span class="sort-ind"></span></th>
+            <th class="sortable" data-sort-key="pushed" data-numeric="0" tabindex="0" role="button">Last push<span class="sort-ind"></span></th>
+            <th class="sortable" data-sort-key="gaps" data-numeric="1" tabindex="0" role="button">Gaps<span class="sort-ind"></span></th>
+          </tr>
+        </thead>
+        <tbody>
+          
+<tr class="sev-bad" data-name="sample-org/legacy-importer" data-gaps="readme claude_md license description topics gitignore tests ci contributors fresh protected" data-excluded="" data-fork="false" data-sort-repo="sample-org/legacy-importer" data-sort-protected="0" data-sort-pyproject="2" data-sort-license="missing" data-sort-contributors="1" data-sort-forks="0" data-sort-topics="0" data-sort-src="1" data-sort-pushed="2024-11-02" data-sort-gaps="11">
+  <td class="stripe" aria-hidden="true"></td>
+  <td class="col-repo">
+    <a class="repo-link" href="https://github.com/sample-org/legacy-importer" title="sample-org/legacy-importer">legacy-importer</a>
+    <div class="desc"><span class="muted">no description</span></div>
+  </td>
+  <td class="col-checks"><span class="chk no" data-gap="readme" title="README"><span class="box" aria-hidden="true"></span></span><span class="chk no" data-gap="claude_md" title="CLAUDE.md"><span class="box" aria-hidden="true"></span></span><span class="chk-group-gap"></span><span class="chk no" data-gap="license" title="License"><span class="box" aria-hidden="true"></span></span><span class="chk no" data-gap="description" title="Description"><span class="box" aria-hidden="true"></span></span><span class="chk no" data-gap="topics" title="Topics"><span class="box" aria-hidden="true"></span></span><span class="chk-group-gap"></span><span class="chk no" data-gap="gitignore" title=".gitignore"><span class="box" aria-hidden="true"></span></span><span class="chk no" data-gap="tests" title="Tests"><span class="box" aria-hidden="true"></span></span><span class="chk no" data-gap="ci" title="CI config"><span class="box" aria-hidden="true"></span></span><span class="chk-group-gap"></span><span class="chk no" data-gap="contributors" title="Contributors"><span class="box" aria-hidden="true"></span></span><span class="chk no" data-gap="fresh" title="Active"><span class="box" aria-hidden="true"></span></span></td>
+  <td class="col-badge"><span class="badge-pill bad">not protected</span></td><td class="col-badge"><span class="badge-pill good">yes</span></td>
+  <td class="col-license"><span class="lic missing">missing</span></td>
+  <td class="col-num">1</td>
+  <td class="col-num">0</td>
+  <td class="col-topics"><span class="muted">&mdash;</span></td>
+  <td class="col-src" title="informational only, not counted as an issue"><span class="info-yes">src/</span></td>
+  <td class="col-pushed">2024-11-02</td>
+  <td class="col-gaps"><span class="gap-count sev-bad">11</span></td>
+</tr>
+<tr class="sev-bad" data-name="sample-org/tutorial-notebook" data-gaps="claude_md license topics tests ci contributors fresh" data-excluded="pyproject" data-fork="false" data-sort-repo="sample-org/tutorial-notebook" data-sort-protected="2" data-sort-pyproject="1" data-sort-license="missing" data-sort-contributors="1" data-sort-forks="1" data-sort-topics="0" data-sort-src="0" data-sort-pushed="2022-01-09" data-sort-gaps="7">
+  <td class="stripe" aria-hidden="true"></td>
+  <td class="col-repo">
+    <a class="repo-link" href="https://github.com/sample-org/tutorial-notebook" title="sample-org/tutorial-notebook">tutorial-notebook</a>
+    <div class="desc">A worked example notebook from a conference talk.</div>
+  </td>
+  <td class="col-checks"><span class="chk yes" data-gap="readme" title="README"><span class="box on" aria-hidden="true"></span></span><span class="chk no" data-gap="claude_md" title="CLAUDE.md"><span class="box" aria-hidden="true"></span></span><span class="chk-group-gap"></span><span class="chk no" data-gap="license" title="License"><span class="box" aria-hidden="true"></span></span><span class="chk yes" data-gap="description" title="Description"><span class="box on" aria-hidden="true"></span></span><span class="chk no" data-gap="topics" title="Topics"><span class="box" aria-hidden="true"></span></span><span class="chk-group-gap"></span><span class="chk yes" data-gap="gitignore" title=".gitignore"><span class="box on" aria-hidden="true"></span></span><span class="chk no" data-gap="tests" title="Tests"><span class="box" aria-hidden="true"></span></span><span class="chk no" data-gap="ci" title="CI config"><span class="box" aria-hidden="true"></span></span><span class="chk-group-gap"></span><span class="chk no" data-gap="contributors" title="Contributors"><span class="box" aria-hidden="true"></span></span><span class="chk no" data-gap="fresh" title="Active"><span class="box" aria-hidden="true"></span></span></td>
+  <td class="col-badge"><span class="badge-pill good">protected</span></td><td class="col-badge"><span class="badge-pill na">n/a</span></td>
+  <td class="col-license"><span class="lic missing">missing</span></td>
+  <td class="col-num">1</td>
+  <td class="col-num">1</td>
+  <td class="col-topics"><span class="muted">&mdash;</span></td>
+  <td class="col-src" title="informational only, not counted as an issue"><span class="muted">&mdash;</span></td>
+  <td class="col-pushed">2022-01-09</td>
+  <td class="col-gaps"><span class="gap-count sev-bad">7</span></td>
+</tr>
+<tr class="sev-bad" data-name="sample-team/internal-wiki-export" data-gaps="license topics tests ci contributors fresh protected" data-excluded="" data-fork="false" data-sort-repo="sample-team/internal-wiki-export" data-sort-protected="0" data-sort-pyproject="2" data-sort-license="missing" data-sort-contributors="1" data-sort-forks="0" data-sort-topics="0" data-sort-src="1" data-sort-pushed="2025-02-11" data-sort-gaps="7">
+  <td class="stripe" aria-hidden="true"></td>
+  <td class="col-repo">
+    <a class="repo-link" href="https://gitlab.com/sample-team/internal-wiki-export" title="sample-team/internal-wiki-export">sample-team/internal-wiki-export</a> &middot; gitlab
+    <div class="desc">Exports the internal wiki to static HTML.</div>
+  </td>
+  <td class="col-checks"><span class="chk yes" data-gap="readme" title="README"><span class="box on" aria-hidden="true"></span></span><span class="chk yes" data-gap="claude_md" title="CLAUDE.md"><span class="box on" aria-hidden="true"></span></span><span class="chk-group-gap"></span><span class="chk no" data-gap="license" title="License"><span class="box" aria-hidden="true"></span></span><span class="chk yes" data-gap="description" title="Description"><span class="box on" aria-hidden="true"></span></span><span class="chk no" data-gap="topics" title="Topics"><span class="box" aria-hidden="true"></span></span><span class="chk-group-gap"></span><span class="chk yes" data-gap="gitignore" title=".gitignore"><span class="box on" aria-hidden="true"></span></span><span class="chk no" data-gap="tests" title="Tests"><span class="box" aria-hidden="true"></span></span><span class="chk no" data-gap="ci" title="CI config"><span class="box" aria-hidden="true"></span></span><span class="chk-group-gap"></span><span class="chk no" data-gap="contributors" title="Contributors"><span class="box" aria-hidden="true"></span></span><span class="chk no" data-gap="fresh" title="Active"><span class="box" aria-hidden="true"></span></span></td>
+  <td class="col-badge"><span class="badge-pill bad">not protected</span></td><td class="col-badge"><span class="badge-pill good">yes</span></td>
+  <td class="col-license"><span class="lic missing">missing</span></td>
+  <td class="col-num">1</td>
+  <td class="col-num">0</td>
+  <td class="col-topics"><span class="muted">&mdash;</span></td>
+  <td class="col-src" title="informational only, not counted as an issue"><span class="info-yes">src/</span></td>
+  <td class="col-pushed">2025-02-11</td>
+  <td class="col-gaps"><span class="gap-count sev-bad">7</span></td>
+</tr>
+<tr class="sev-bad" data-name="sample-org/dotfiles" data-gaps="claude_md license topics tests ci contributors" data-excluded="pyproject" data-fork="false" data-sort-repo="sample-org/dotfiles" data-sort-protected="2" data-sort-pyproject="1" data-sort-license="missing" data-sort-contributors="1" data-sort-forks="0" data-sort-topics="0" data-sort-src="1" data-sort-pushed="2026-08-15" data-sort-gaps="6">
+  <td class="stripe" aria-hidden="true"></td>
+  <td class="col-repo">
+    <a class="repo-link" href="https://github.com/sample-org/dotfiles" title="sample-org/dotfiles">dotfiles</a>
+    <div class="desc">Personal shell and editor configuration.</div>
+  </td>
+  <td class="col-checks"><span class="chk yes" data-gap="readme" title="README"><span class="box on" aria-hidden="true"></span></span><span class="chk no" data-gap="claude_md" title="CLAUDE.md"><span class="box" aria-hidden="true"></span></span><span class="chk-group-gap"></span><span class="chk no" data-gap="license" title="License"><span class="box" aria-hidden="true"></span></span><span class="chk yes" data-gap="description" title="Description"><span class="box on" aria-hidden="true"></span></span><span class="chk no" data-gap="topics" title="Topics"><span class="box" aria-hidden="true"></span></span><span class="chk-group-gap"></span><span class="chk yes" data-gap="gitignore" title=".gitignore"><span class="box on" aria-hidden="true"></span></span><span class="chk no" data-gap="tests" title="Tests"><span class="box" aria-hidden="true"></span></span><span class="chk no" data-gap="ci" title="CI config"><span class="box" aria-hidden="true"></span></span><span class="chk-group-gap"></span><span class="chk no" data-gap="contributors" title="Contributors"><span class="box" aria-hidden="true"></span></span><span class="chk yes" data-gap="fresh" title="Active"><span class="box on" aria-hidden="true"></span></span></td>
+  <td class="col-badge"><span class="badge-pill good">protected</span></td><td class="col-badge"><span class="badge-pill na">n/a</span></td>
+  <td class="col-license"><span class="lic missing">missing</span></td>
+  <td class="col-num">1</td>
+  <td class="col-num">0</td>
+  <td class="col-topics"><span class="muted">&mdash;</span></td>
+  <td class="col-src" title="informational only, not counted as an issue"><span class="info-yes">src/</span></td>
+  <td class="col-pushed">2026-08-15</td>
+  <td class="col-gaps"><span class="gap-count sev-bad">6</span></td>
+</tr>
+<tr class="sev-warn" data-name="sample-org/rails-starter" data-gaps="claude_md fresh" data-excluded="pyproject" data-fork="true" data-sort-repo="sample-org/rails-starter" data-sort-protected="2" data-sort-pyproject="1" data-sort-license="mit" data-sort-contributors="1" data-sort-forks="0" data-sort-topics="2" data-sort-src="1" data-sort-pushed="2025-05-18" data-sort-gaps="2">
+  <td class="stripe" aria-hidden="true"></td>
+  <td class="col-repo">
+    <a class="repo-link" href="https://github.com/sample-org/rails-starter" title="sample-org/rails-starter">rails-starter</a> &middot; fork
+    <div class="desc">Fork of an upstream Rails starter template, customized for internal use.</div>
+  </td>
+  <td class="col-checks"><span class="chk yes" data-gap="readme" title="README"><span class="box on" aria-hidden="true"></span></span><span class="chk no" data-gap="claude_md" title="CLAUDE.md"><span class="box" aria-hidden="true"></span></span><span class="chk-group-gap"></span><span class="chk yes" data-gap="license" title="License"><span class="box on" aria-hidden="true"></span></span><span class="chk yes" data-gap="description" title="Description"><span class="box on" aria-hidden="true"></span></span><span class="chk yes" data-gap="topics" title="Topics"><span class="box on" aria-hidden="true"></span></span><span class="chk-group-gap"></span><span class="chk yes" data-gap="gitignore" title=".gitignore"><span class="box on" aria-hidden="true"></span></span><span class="chk yes" data-gap="tests" title="Tests"><span class="box on" aria-hidden="true"></span></span><span class="chk yes" data-gap="ci" title="CI config"><span class="box on" aria-hidden="true"></span></span><span class="chk-group-gap"></span><span class="chk yes" data-gap="contributors" title="Contributors"><span class="box on" aria-hidden="true"></span></span><span class="chk no" data-gap="fresh" title="Active"><span class="box" aria-hidden="true"></span></span></td>
+  <td class="col-badge"><span class="badge-pill good">protected</span></td><td class="col-badge"><span class="badge-pill na">n/a</span></td>
+  <td class="col-license"><span class="lic ">MIT</span></td>
+  <td class="col-num">1</td>
+  <td class="col-num">0</td>
+  <td class="col-topics"><span class="topic">rails</span><span class="topic">starter</span></td>
+  <td class="col-src" title="informational only, not counted as an issue"><span class="info-yes">src/</span></td>
+  <td class="col-pushed">2025-05-18</td>
+  <td class="col-gaps"><span class="gap-count sev-warn">2</span></td>
+</tr>
+<tr class="sev-good" data-name="sample-org/gplv3-toolkit" data-gaps="" data-excluded="" data-fork="false" data-sort-repo="sample-org/gplv3-toolkit" data-sort-protected="2" data-sort-pyproject="2" data-sort-license="gpl" data-sort-contributors="4" data-sort-forks="2" data-sort-topics="2" data-sort-src="1" data-sort-pushed="2026-07-30" data-sort-gaps="0">
+  <td class="stripe" aria-hidden="true"></td>
+  <td class="col-repo">
+    <a class="repo-link" href="https://github.com/sample-org/gplv3-toolkit" title="sample-org/gplv3-toolkit">gplv3-toolkit</a>
+    <div class="desc">Command-line utilities released under the GPL.</div>
+  </td>
+  <td class="col-checks"><span class="chk yes" data-gap="readme" title="README"><span class="box on" aria-hidden="true"></span></span><span class="chk yes" data-gap="claude_md" title="CLAUDE.md"><span class="box on" aria-hidden="true"></span></span><span class="chk-group-gap"></span><span class="chk yes" data-gap="license" title="License"><span class="box on" aria-hidden="true"></span></span><span class="chk yes" data-gap="description" title="Description"><span class="box on" aria-hidden="true"></span></span><span class="chk yes" data-gap="topics" title="Topics"><span class="box on" aria-hidden="true"></span></span><span class="chk-group-gap"></span><span class="chk yes" data-gap="gitignore" title=".gitignore"><span class="box on" aria-hidden="true"></span></span><span class="chk yes" data-gap="tests" title="Tests"><span class="box on" aria-hidden="true"></span></span><span class="chk yes" data-gap="ci" title="CI config"><span class="box on" aria-hidden="true"></span></span><span class="chk-group-gap"></span><span class="chk yes" data-gap="contributors" title="Contributors"><span class="box on" aria-hidden="true"></span></span><span class="chk yes" data-gap="fresh" title="Active"><span class="box on" aria-hidden="true"></span></span></td>
+  <td class="col-badge"><span class="badge-pill good">protected</span></td><td class="col-badge"><span class="badge-pill good">yes</span></td>
+  <td class="col-license"><span class="lic ">GPL</span></td>
+  <td class="col-num">4</td>
+  <td class="col-num">2</td>
+  <td class="col-topics"><span class="topic">gpl</span><span class="topic">utilities</span></td>
+  <td class="col-src" title="informational only, not counted as an issue"><span class="info-yes">src/</span></td>
+  <td class="col-pushed">2026-07-30</td>
+  <td class="col-gaps"><span class="gap-count sev-good">clean</span></td>
+</tr>
+<tr class="sev-good" data-name="sample-org/metrics-agent" data-gaps="" data-excluded="protected" data-fork="false" data-sort-repo="sample-org/metrics-agent" data-sort-protected="1" data-sort-pyproject="2" data-sort-license="mit" data-sort-contributors="2" data-sort-forks="0" data-sort-topics="1" data-sort-src="1" data-sort-pushed="2026-08-28" data-sort-gaps="0">
+  <td class="stripe" aria-hidden="true"></td>
+  <td class="col-repo">
+    <a class="repo-link" href="https://github.com/sample-org/metrics-agent" title="sample-org/metrics-agent">metrics-agent</a>
+    <div class="desc">Lightweight metrics collection daemon.</div>
+  </td>
+  <td class="col-checks"><span class="chk yes" data-gap="readme" title="README"><span class="box on" aria-hidden="true"></span></span><span class="chk yes" data-gap="claude_md" title="CLAUDE.md"><span class="box on" aria-hidden="true"></span></span><span class="chk-group-gap"></span><span class="chk yes" data-gap="license" title="License"><span class="box on" aria-hidden="true"></span></span><span class="chk yes" data-gap="description" title="Description"><span class="box on" aria-hidden="true"></span></span><span class="chk yes" data-gap="topics" title="Topics"><span class="box on" aria-hidden="true"></span></span><span class="chk-group-gap"></span><span class="chk yes" data-gap="gitignore" title=".gitignore"><span class="box on" aria-hidden="true"></span></span><span class="chk yes" data-gap="tests" title="Tests"><span class="box on" aria-hidden="true"></span></span><span class="chk yes" data-gap="ci" title="CI config"><span class="box on" aria-hidden="true"></span></span><span class="chk-group-gap"></span><span class="chk yes" data-gap="contributors" title="Contributors"><span class="box on" aria-hidden="true"></span></span><span class="chk yes" data-gap="fresh" title="Active"><span class="box on" aria-hidden="true"></span></span></td>
+  <td class="col-badge"><span class="badge-pill na">unknown</span></td><td class="col-badge"><span class="badge-pill good">yes</span></td>
+  <td class="col-license"><span class="lic ">MIT</span></td>
+  <td class="col-num">2</td>
+  <td class="col-num">0</td>
+  <td class="col-topics"><span class="topic">observability</span></td>
+  <td class="col-src" title="informational only, not counted as an issue"><span class="info-yes">src/</span></td>
+  <td class="col-pushed">2026-08-28</td>
+  <td class="col-gaps"><span class="gap-count sev-good">clean</span></td>
+</tr>
+<tr class="sev-good" data-name="sample-org/old-prototype" data-gaps="readme license topics ci contributors" data-excluded="" data-fork="false" data-sort-repo="sample-org/old-prototype" data-sort-protected="2" data-sort-pyproject="2" data-sort-license="missing" data-sort-contributors="1" data-sort-forks="0" data-sort-topics="0" data-sort-src="1" data-sort-pushed="2021-06-14" data-sort-gaps="0">
+  <td class="stripe" aria-hidden="true"></td>
+  <td class="col-repo">
+    <a class="repo-link" href="https://github.com/sample-org/old-prototype" title="sample-org/old-prototype">old-prototype</a>
+    <div class="desc">Early prototype, superseded by taskflow-api.</div>
+  </td>
+  <td class="col-checks"><span class="chk no" data-gap="readme" title="README"><span class="box" aria-hidden="true"></span></span><span class="chk yes" data-gap="claude_md" title="CLAUDE.md"><span class="box on" aria-hidden="true"></span></span><span class="chk-group-gap"></span><span class="chk no" data-gap="license" title="License"><span class="box" aria-hidden="true"></span></span><span class="chk yes" data-gap="description" title="Description"><span class="box on" aria-hidden="true"></span></span><span class="chk no" data-gap="topics" title="Topics"><span class="box" aria-hidden="true"></span></span><span class="chk-group-gap"></span><span class="chk yes" data-gap="gitignore" title=".gitignore"><span class="box on" aria-hidden="true"></span></span><span class="chk yes" data-gap="tests" title="Tests"><span class="box on" aria-hidden="true"></span></span><span class="chk no" data-gap="ci" title="CI config"><span class="box" aria-hidden="true"></span></span><span class="chk-group-gap"></span><span class="chk no" data-gap="contributors" title="Contributors"><span class="box" aria-hidden="true"></span></span><span class="chk yes" data-gap="fresh" title="Active"><span class="box on" aria-hidden="true"></span></span></td>
+  <td class="col-badge"><span class="badge-pill good">protected</span></td><td class="col-badge"><span class="badge-pill good">yes</span></td>
+  <td class="col-license"><span class="lic missing">missing</span></td>
+  <td class="col-num">1</td>
+  <td class="col-num">0</td>
+  <td class="col-topics"><span class="muted">&mdash;</span></td>
+  <td class="col-src" title="informational only, not counted as an issue"><span class="info-yes">src/</span></td>
+  <td class="col-pushed">2021-06-14</td>
+  <td class="col-gaps"><span class="gap-count sev-good">clean</span></td>
+</tr>
+<tr class="sev-good" data-name="sample-org/taskflow-api" data-gaps="" data-excluded="" data-fork="false" data-sort-repo="sample-org/taskflow-api" data-sort-protected="2" data-sort-pyproject="2" data-sort-license="mit" data-sort-contributors="6" data-sort-forks="3" data-sort-topics="3" data-sort-src="1" data-sort-pushed="2026-09-01" data-sort-gaps="0">
+  <td class="stripe" aria-hidden="true"></td>
+  <td class="col-repo">
+    <a class="repo-link" href="https://github.com/sample-org/taskflow-api" title="sample-org/taskflow-api">taskflow-api</a>
+    <div class="desc">Task orchestration API used by the internal ops dashboard.</div>
+  </td>
+  <td class="col-checks"><span class="chk yes" data-gap="readme" title="README"><span class="box on" aria-hidden="true"></span></span><span class="chk yes" data-gap="claude_md" title="CLAUDE.md"><span class="box on" aria-hidden="true"></span></span><span class="chk-group-gap"></span><span class="chk yes" data-gap="license" title="License"><span class="box on" aria-hidden="true"></span></span><span class="chk yes" data-gap="description" title="Description"><span class="box on" aria-hidden="true"></span></span><span class="chk yes" data-gap="topics" title="Topics"><span class="box on" aria-hidden="true"></span></span><span class="chk-group-gap"></span><span class="chk yes" data-gap="gitignore" title=".gitignore"><span class="box on" aria-hidden="true"></span></span><span class="chk yes" data-gap="tests" title="Tests"><span class="box on" aria-hidden="true"></span></span><span class="chk yes" data-gap="ci" title="CI config"><span class="box on" aria-hidden="true"></span></span><span class="chk-group-gap"></span><span class="chk yes" data-gap="contributors" title="Contributors"><span class="box on" aria-hidden="true"></span></span><span class="chk yes" data-gap="fresh" title="Active"><span class="box on" aria-hidden="true"></span></span></td>
+  <td class="col-badge"><span class="badge-pill good">protected</span></td><td class="col-badge"><span class="badge-pill good">yes</span></td>
+  <td class="col-license"><span class="lic ">MIT</span></td>
+  <td class="col-num">6</td>
+  <td class="col-num">3</td>
+  <td class="col-topics"><span class="topic">python</span><span class="topic">fastapi</span><span class="topic">internal-tool</span></td>
+  <td class="col-src" title="informational only, not counted as an issue"><span class="info-yes">src/</span></td>
+  <td class="col-pushed">2026-09-01</td>
+  <td class="col-gaps"><span class="gap-count sev-good">clean</span></td>
+</tr>
+<tr class="sev-good" data-name="sample-org/terraform-modules" data-gaps="" data-excluded="pyproject" data-fork="false" data-sort-repo="sample-org/terraform-modules" data-sort-protected="2" data-sort-pyproject="1" data-sort-license="mit" data-sort-contributors="5" data-sort-forks="4" data-sort-topics="2" data-sort-src="1" data-sort-pushed="2026-09-03" data-sort-gaps="0">
+  <td class="stripe" aria-hidden="true"></td>
+  <td class="col-repo">
+    <a class="repo-link" href="https://github.com/sample-org/terraform-modules" title="sample-org/terraform-modules">terraform-modules</a>
+    <div class="desc">Reusable Terraform modules for our cloud infrastructure.</div>
+  </td>
+  <td class="col-checks"><span class="chk yes" data-gap="readme" title="README"><span class="box on" aria-hidden="true"></span></span><span class="chk yes" data-gap="claude_md" title="CLAUDE.md"><span class="box on" aria-hidden="true"></span></span><span class="chk-group-gap"></span><span class="chk yes" data-gap="license" title="License"><span class="box on" aria-hidden="true"></span></span><span class="chk yes" data-gap="description" title="Description"><span class="box on" aria-hidden="true"></span></span><span class="chk yes" data-gap="topics" title="Topics"><span class="box on" aria-hidden="true"></span></span><span class="chk-group-gap"></span><span class="chk yes" data-gap="gitignore" title=".gitignore"><span class="box on" aria-hidden="true"></span></span><span class="chk yes" data-gap="tests" title="Tests"><span class="box on" aria-hidden="true"></span></span><span class="chk yes" data-gap="ci" title="CI config"><span class="box on" aria-hidden="true"></span></span><span class="chk-group-gap"></span><span class="chk yes" data-gap="contributors" title="Contributors"><span class="box on" aria-hidden="true"></span></span><span class="chk yes" data-gap="fresh" title="Active"><span class="box on" aria-hidden="true"></span></span></td>
+  <td class="col-badge"><span class="badge-pill good">protected</span></td><td class="col-badge"><span class="badge-pill na">n/a</span></td>
+  <td class="col-license"><span class="lic ">MIT</span></td>
+  <td class="col-num">5</td>
+  <td class="col-num">4</td>
+  <td class="col-topics"><span class="topic">terraform</span><span class="topic">infra</span></td>
+  <td class="col-src" title="informational only, not counted as an issue"><span class="info-yes">src/</span></td>
+  <td class="col-pushed">2026-09-03</td>
+  <td class="col-gaps"><span class="gap-count sev-good">clean</span></td>
+</tr>
+<tr class="sev-good" data-name="sample-org/widget-frontend" data-gaps="" data-excluded="pyproject" data-fork="false" data-sort-repo="sample-org/widget-frontend" data-sort-protected="2" data-sort-pyproject="1" data-sort-license="mit" data-sort-contributors="8" data-sort-forks="6" data-sort-topics="2" data-sort-src="1" data-sort-pushed="2026-09-02" data-sort-gaps="0">
+  <td class="stripe" aria-hidden="true"></td>
+  <td class="col-repo">
+    <a class="repo-link" href="https://github.com/sample-org/widget-frontend" title="sample-org/widget-frontend">widget-frontend</a>
+    <div class="desc">React frontend for the widget platform.</div>
+  </td>
+  <td class="col-checks"><span class="chk yes" data-gap="readme" title="README"><span class="box on" aria-hidden="true"></span></span><span class="chk yes" data-gap="claude_md" title="CLAUDE.md"><span class="box on" aria-hidden="true"></span></span><span class="chk-group-gap"></span><span class="chk yes" data-gap="license" title="License"><span class="box on" aria-hidden="true"></span></span><span class="chk yes" data-gap="description" title="Description"><span class="box on" aria-hidden="true"></span></span><span class="chk yes" data-gap="topics" title="Topics"><span class="box on" aria-hidden="true"></span></span><span class="chk-group-gap"></span><span class="chk yes" data-gap="gitignore" title=".gitignore"><span class="box on" aria-hidden="true"></span></span><span class="chk yes" data-gap="tests" title="Tests"><span class="box on" aria-hidden="true"></span></span><span class="chk yes" data-gap="ci" title="CI config"><span class="box on" aria-hidden="true"></span></span><span class="chk-group-gap"></span><span class="chk yes" data-gap="contributors" title="Contributors"><span class="box on" aria-hidden="true"></span></span><span class="chk yes" data-gap="fresh" title="Active"><span class="box on" aria-hidden="true"></span></span></td>
+  <td class="col-badge"><span class="badge-pill good">protected</span></td><td class="col-badge"><span class="badge-pill na">n/a</span></td>
+  <td class="col-license"><span class="lic ">MIT</span></td>
+  <td class="col-num">8</td>
+  <td class="col-num">6</td>
+  <td class="col-topics"><span class="topic">react</span><span class="topic">typescript</span></td>
+  <td class="col-src" title="informational only, not counted as an issue"><span class="info-yes">src/</span></td>
+  <td class="col-pushed">2026-09-02</td>
+  <td class="col-gaps"><span class="gap-count sev-good">clean</span></td>
+</tr>
+<tr class="sev-good" data-name="sample-team/data-pipelines" data-gaps="" data-excluded="" data-fork="false" data-sort-repo="sample-team/data-pipelines" data-sort-protected="2" data-sort-pyproject="2" data-sort-license="agpl" data-sort-contributors="3" data-sort-forks="1" data-sort-topics="2" data-sort-src="1" data-sort-pushed="2026-08-25" data-sort-gaps="0">
+  <td class="stripe" aria-hidden="true"></td>
+  <td class="col-repo">
+    <a class="repo-link" href="https://gitlab.com/sample-team/data-pipelines" title="sample-team/data-pipelines">sample-team/data-pipelines</a> &middot; gitlab
+    <div class="desc">ETL pipelines for the analytics warehouse.</div>
+  </td>
+  <td class="col-checks"><span class="chk yes" data-gap="readme" title="README"><span class="box on" aria-hidden="true"></span></span><span class="chk yes" data-gap="claude_md" title="CLAUDE.md"><span class="box on" aria-hidden="true"></span></span><span class="chk-group-gap"></span><span class="chk yes" data-gap="license" title="License"><span class="box on" aria-hidden="true"></span></span><span class="chk yes" data-gap="description" title="Description"><span class="box on" aria-hidden="true"></span></span><span class="chk yes" data-gap="topics" title="Topics"><span class="box on" aria-hidden="true"></span></span><span class="chk-group-gap"></span><span class="chk yes" data-gap="gitignore" title=".gitignore"><span class="box on" aria-hidden="true"></span></span><span class="chk yes" data-gap="tests" title="Tests"><span class="box on" aria-hidden="true"></span></span><span class="chk yes" data-gap="ci" title="CI config"><span class="box on" aria-hidden="true"></span></span><span class="chk-group-gap"></span><span class="chk yes" data-gap="contributors" title="Contributors"><span class="box on" aria-hidden="true"></span></span><span class="chk yes" data-gap="fresh" title="Active"><span class="box on" aria-hidden="true"></span></span></td>
+  <td class="col-badge"><span class="badge-pill good">protected</span></td><td class="col-badge"><span class="badge-pill good">yes</span></td>
+  <td class="col-license"><span class="lic ">AGPL</span></td>
+  <td class="col-num">3</td>
+  <td class="col-num">1</td>
+  <td class="col-topics"><span class="topic">etl</span><span class="topic">airflow</span></td>
+  <td class="col-src" title="informational only, not counted as an issue"><span class="info-yes">src/</span></td>
+  <td class="col-pushed">2026-08-25</td>
+  <td class="col-gaps"><span class="gap-count sev-good">clean</span></td>
+</tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    Generated locally by <a href="https://github.com/ubeast/repo-healthcheck">repo-healthcheck</a> &mdash; read-only, no changes were made to any repo.
+  </footer>
+</div>
+
+<script>
+(function() {
+  // Each chip cycles through three states on click: 0 = off, 1 = "show
+  // repos missing this", 2 = "show repos that have this". A row listed in
+  // data-excluded for a key (branch-protection unknown, or pyproject on a
+  // non-Python repo) never matches either state for that key -- it isn't
+  // "missing" or "has", it's not determinable/applicable. Multiple chips
+  // combine with AND, so e.g. README=has + License=missing finds repos
+  // that have a README but still need a license.
+  var rows = Array.prototype.slice.call(document.querySelectorAll('#repo-table tbody tr'));
+  var search = document.getElementById('search');
+  var chips = Array.prototype.slice.call(document.querySelectorAll('[data-filter]'));
+  var clearBtn = document.getElementById('clear-filter');
+  var resultCount = document.getElementById('result-count');
+  var filters = {}; // key -> 1 (missing) | 2 (has)
+  var forkFilter = null; // null | 'forks' | 'originals' -- separate from the health-check chips above,
+                          // since "is a fork" isn't a pass/fail check, just a repo attribute to narrow by
+  var forkToggles = Array.prototype.slice.call(document.querySelectorAll('.fork-toggle'));
+
+  function updateChipVisual(chip) {
+    var key = chip.getAttribute('data-filter');
+    var state = filters[key] || 0;
+    chip.classList.remove('state-missing', 'state-has');
+    var n = chip.querySelector('.chip-n');
+    if (state === 1) {
+      chip.classList.add('state-missing');
+      n.textContent = chip.getAttribute('data-missing');
+    } else if (state === 2) {
+      chip.classList.add('state-has');
+      n.textContent = chip.getAttribute('data-has');
+    } else {
+      n.textContent = chip.getAttribute('data-missing');
+    }
+  }
+
+  function applyFilters() {
+    var term = search.value.trim().toLowerCase();
+    var keys = Object.keys(filters);
+    var visible = 0;
+    rows.forEach(function(row) {
+      var nameMatch = !term || row.getAttribute('data-name').indexOf(term) !== -1;
+      var gapSet = ' ' + row.getAttribute('data-gaps') + ' ';
+      var excludedSet = ' ' + row.getAttribute('data-excluded') + ' ';
+      var gapMatch = keys.every(function(key) {
+        if (excludedSet.indexOf(' ' + key + ' ') !== -1) return false;
+        var missing = gapSet.indexOf(' ' + key + ' ') !== -1;
+        return filters[key] === 1 ? missing : !missing;
+      });
+      var isFork = row.getAttribute('data-fork') === 'true';
+      var forkMatch = !forkFilter || (forkFilter === 'forks' ? isFork : !isFork);
+      var show = nameMatch && gapMatch && forkMatch;
+      row.classList.toggle('hidden', !show);
+      if (show) visible++;
+    });
+    resultCount.textContent = visible + ' / ' + rows.length + ' shown';
+    clearBtn.style.display = (keys.length || term || forkFilter) ? 'inline-block' : 'none';
+  }
+
+  search.addEventListener('input', applyFilters);
+
+  chips.forEach(function(chip) {
+    chip.addEventListener('click', function() {
+      var key = chip.getAttribute('data-filter');
+      var state = (filters[key] || 0) + 1;
+      if (state > 2) {
+        delete filters[key];
+      } else {
+        filters[key] = state;
+      }
+      updateChipVisual(chip);
+      applyFilters();
+    });
+  });
+
+  function updateForkToggleVisuals() {
+    forkToggles.forEach(function(btn) {
+      btn.classList.toggle('state-active', btn.getAttribute('data-fork-filter') === forkFilter);
+    });
+  }
+
+  forkToggles.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var which = btn.getAttribute('data-fork-filter');
+      forkFilter = forkFilter === which ? null : which;
+      updateForkToggleVisuals();
+      applyFilters();
+    });
+  });
+
+  clearBtn.addEventListener('click', function() {
+    filters = {};
+    forkFilter = null;
+    search.value = '';
+    chips.forEach(updateChipVisual);
+    updateForkToggleVisuals();
+    applyFilters();
+  });
+
+  // Multi-column sort: clicking a header makes it the primary sort key
+  // (moved to the front) while keeping any other already-active columns as
+  // lower-priority tie-breakers, so plain clicks (no modifier key) build up
+  // a multi-column sort in click order -- most recently clicked wins ties
+  // first. Clicking the same column again flips its direction; a third
+  // click drops it from the sort and the others shift up in priority.
+  var tbody = document.querySelector('#repo-table tbody');
+  var sortHeaders = Array.prototype.slice.call(document.querySelectorAll('th.sortable'));
+  var resetSortBtn = document.getElementById('reset-sort');
+  var DEFAULT_SORT = [{ key: 'gaps', dir: 'desc' }]; // matches the server-rendered default order
+  var sortState = [{ key: 'gaps', dir: 'desc' }];
+
+  function isDefaultSort() {
+    return sortState.length === 1 && sortState[0].key === DEFAULT_SORT[0].key && sortState[0].dir === DEFAULT_SORT[0].dir;
+  }
+
+  function renderSortIndicators() {
+    sortHeaders.forEach(function(th) {
+      var key = th.getAttribute('data-sort-key');
+      var ind = th.querySelector('.sort-ind');
+      var idx = -1;
+      for (var i = 0; i < sortState.length; i++) {
+        if (sortState[i].key === key) { idx = i; break; }
+      }
+      if (idx === -1) {
+        ind.innerHTML = '';
+        return;
+      }
+      var arrow = sortState[idx].dir === 'asc' ? '▲' : '▼';
+      var priority = sortState.length > 1 ? '<span class="sort-priority">' + (idx + 1) + '</span>' : '';
+      ind.innerHTML = '<span class="sort-arrow">' + arrow + '</span>' + priority;
+    });
+    resetSortBtn.style.display = isDefaultSort() ? 'none' : 'inline-block';
+  }
+
+  function sortRows() {
+    var sorted = rows.slice().sort(function(a, b) {
+      for (var i = 0; i < sortState.length; i++) {
+        var s = sortState[i];
+        var th = document.querySelector('th[data-sort-key="' + s.key + '"]');
+        var numeric = th && th.getAttribute('data-numeric') === '1';
+        var av = a.getAttribute('data-sort-' + s.key);
+        var bv = b.getAttribute('data-sort-' + s.key);
+        var cmp;
+        if (numeric) {
+          cmp = parseFloat(av) - parseFloat(bv);
+        } else {
+          cmp = av < bv ? -1 : (av > bv ? 1 : 0);
+        }
+        if (cmp !== 0) return s.dir === 'asc' ? cmp : -cmp;
+      }
+      var an = a.getAttribute('data-sort-repo'), bn = b.getAttribute('data-sort-repo');
+      return an < bn ? -1 : (an > bn ? 1 : 0);
+    });
+    sorted.forEach(function(row) { tbody.appendChild(row); });
+  }
+
+  sortHeaders.forEach(function(th) {
+    function activate() {
+      var key = th.getAttribute('data-sort-key');
+      var idx = -1;
+      for (var i = 0; i < sortState.length; i++) {
+        if (sortState[i].key === key) { idx = i; break; }
+      }
+      if (idx === -1) {
+        sortState.unshift({ key: key, dir: 'asc' });
+      } else if (sortState[idx].dir === 'asc') {
+        var entry = sortState.splice(idx, 1)[0];
+        entry.dir = 'desc';
+        sortState.unshift(entry);
+      } else {
+        sortState.splice(idx, 1);
+      }
+      renderSortIndicators();
+      sortRows();
+    }
+    th.addEventListener('click', activate);
+    th.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(); }
+    });
+  });
+
+  resetSortBtn.addEventListener('click', function() {
+    sortState = [{ key: DEFAULT_SORT[0].key, dir: DEFAULT_SORT[0].dir }];
+    renderSortIndicators();
+    sortRows();
+  });
+
+  renderSortIndicators();
+  applyFilters();
+})();
+</script>
+</body>
+</html>
