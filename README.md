@@ -1,5 +1,10 @@
 # repo-healthcheck
 
+[![CI](https://github.com/ubeast/repo-healthcheck/actions/workflows/ci.yml/badge.svg)](https://github.com/ubeast/repo-healthcheck/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](pyproject.toml)
+[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
+
 **[See it in action →](https://ubeast.github.io/repo-healthcheck/)**
 
 Consolidates every GitHub repo you can see (and, with `--gitlab`, your GitLab
