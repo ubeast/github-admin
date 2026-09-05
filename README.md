@@ -15,6 +15,8 @@ $ repo-healthcheck
 prints a table sorted worst-first (most issues on top), so problem repos
 never get buried below healthy ones.
 
+<img src="https://raw.githubusercontent.com/ubeast/repo-healthcheck/main/docs/images/masthead.png" alt="repo-healthcheck dashboard header showing 12 repos audited, 5 with at least one gap, 2.8 average gaps per repo, and License as the most common gap" width="820">
+
 Two HTML export options:
 
 - `--html report.html` -- a plain static table, every issue spelled out as text.
@@ -25,12 +27,16 @@ Two HTML export options:
   in click order). This is the one worth opening in a browser and actually
   using, not just reading.
 
+<img src="https://raw.githubusercontent.com/ubeast/repo-healthcheck/main/docs/images/table.png" alt="Interactive worst-first repo table with filter chips for each check and columns for branch protection, license type, contributors, forks, topics, and last push date" width="820">
+
 Repo names are shown without the owner prefix for whichever account most of
 the report's repos belong to (hover, or the terminal table's title, still
 shows the full name) -- a repo under any other owner keeps `owner/name` so
 it isn't confused with that account's repo of the same short name.
 
 ## What it checks
+
+<img src="https://raw.githubusercontent.com/ubeast/repo-healthcheck/main/docs/images/checklist.png" alt="The checklist: twelve checks grouped by kind -- README, CLAUDE.md, License, Description, Topics, .gitignore, Tests, CI config, Contributors, Active, Branch protected, and pyproject.toml -- each with its criterion and a live missing-count" width="820">
 
 | check | flagged when | why it matters |
 | --- | --- | --- |
