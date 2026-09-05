@@ -85,6 +85,34 @@ structure / staleness). See `README.md` for usage and the check list.
 - **The "no CI config" check exempts forks** (2026-09), same reasoning as
   the contributors check: you didn't choose to set up CI for someone else's
   code, so its absence on a fork isn't a signal about you.
+- **The dashboard's fork/originals filter is a separate control from the
+  `CHECKS`-driven chips, deliberately** (2026-09, resolves issue #2).
+  Every other chip is a pass/fail health signal (missing README, no
+  license, ...) with a `data-gaps`/`data-excluded` row attribute driving a
+  generic 3-state (off/missing/has) click cycle. "Is a fork" isn't a
+  pass/fail check -- it's neutral metadata, and forcing it into the
+  `CHECKS` list would make the legend read as if being a fork is an issue
+  to fix (missing X/Y). Instead it's two independent toggle buttons
+  (`#forks-only-chip` / `#originals-only-chip`, `.fork-toggle` class)
+  reading a plain `data-fork="true"/"false"` row attribute, combined by AND
+  with the health-check filters in `applyFilters()`. If a future filter is
+  similarly "narrow by attribute" rather than "narrow by pass/fail," follow
+  this pattern rather than stretching `CHECKS` to fit.
+- **Repo names show just `name`, not `owner/name`, for whichever owner is
+  most represented in the report** (2026-09) -- `_primary_owner()`
+  (duplicated in each of the three renderer modules; they don't share a
+  utils module, see the GitLab-client note above for why that's the
+  existing pattern here) picks the owner appearing on the most rows via
+  `collections.Counter`. A repo under any other owner (a different org, or
+  a GitLab account alongside a mostly-GitHub report) keeps the full
+  `owner/name` so it isn't mistaken for the primary account's repo of the
+  same short name. The full name is never lost -- it's in the link's
+  `title` attribute (HTML renderers) or the table title (terminal). Ties
+  are broken by whichever owner appears first in the *already-sorted*
+  (worst-first) results list, not fetch order -- not worth engineering
+  around since a genuine tie (equal repo counts across two owners) is rare
+  and the fallback (full name shown) is still correct either way, just not
+  maximally compact.
 
 ## Open questions
 

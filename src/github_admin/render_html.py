@@ -2,12 +2,21 @@
 
 from __future__ import annotations
 
+from collections import Counter
 from datetime import datetime
 from html import escape
 
 from github_admin.health import RepoHealth
 
 __all__ = ["render"]
+
+
+def _primary_owner(results: list[RepoHealth]) -> str:
+    """The most-represented owner -- see render_dashboard._primary_owner
+    for why only non-primary-owner repos keep their owner/ prefix here.
+    """
+    counts = Counter(h.repo.owner for h in results)
+    return counts.most_common(1)[0][0] if counts else ""
 
 _STYLE = """
 :root { color-scheme: light dark; }
@@ -64,10 +73,12 @@ def render(results: list[RepoHealth]) -> str:
     """Return a complete, self-contained HTML document as a string."""
     unhealthy = sum(1 for h in results if not h.is_healthy)
     generated = datetime.now().strftime("%Y-%m-%d %H:%M")
+    primary_owner = _primary_owner(results)
 
     rows = []
     for h in results:
         r = h.repo
+        display_name = r.name if r.owner == primary_owner else r.full_name
         classes = []
         if r.archived:
             classes.append("archived")
@@ -85,7 +96,8 @@ def render(results: list[RepoHealth]) -> str:
 
         rows.append(
             f"<tr{row_class}>"
-            f'<td><a href="{escape(r.url)}">{escape(r.full_name)}</a>{platform_note}{archived_note}</td>'
+            f'<td><a href="{escape(r.url)}" title="{escape(r.full_name)}">{escape(display_name)}</a>'
+            f"{platform_note}{archived_note}</td>"
             f'<td class="center">{_flag(r.has_readme)}</td>'
             f'<td class="center">{_flag(r.has_claude_md)}</td>'
             f'<td class="center">{_flag_tri(r.branch_protected)}</td>'
@@ -109,7 +121,8 @@ def render(results: list[RepoHealth]) -> str:
 </head>
 <body>
 <h1>github-admin -- repo health report</h1>
-<p class="meta">{len(results)} repos, {unhealthy} with at least one issue. Generated {generated}.</p>
+<p class="meta">{len(results)} repos, {unhealthy} with at least one issue. Generated {generated}.
+{f'Repos owned by <b>{escape(primary_owner)}</b> are shown without the owner prefix.' if primary_owner else ''}</p>
 <table>
 <thead>
 <tr>

@@ -48,6 +48,21 @@ def test_render_prints_repo_name_and_summary() -> None:
     console = Console(file=buf, width=200)
     render_terminal.render([result], console=console)
     output = buf.getvalue()
-    assert "octocat/widget" in output
+    # single-owner report: shown by short name, owner surfaced in the table title
+    assert "widget" in output
+    assert "octocat" in output
     assert "2 issues" in output
     assert "1 of 1 repos have at least one issue." in output
+
+
+def test_render_shows_full_name_for_non_primary_owner() -> None:
+    primary = RepoHealth(repo=_repo(owner="acme", full_name="acme/one", name="one"), issues=[])
+    other = RepoHealth(repo=_repo(owner="acme", full_name="acme/two", name="two"), issues=[])
+    outsider = RepoHealth(repo=_repo(owner="beta", full_name="beta/three", name="three"), issues=[])
+    buf = io.StringIO()
+    console = Console(file=buf, width=200)
+    render_terminal.render([primary, other, outsider], console=console)
+    output = buf.getvalue()
+    assert "beta/three" in output
+    assert "acme/one" not in output
+    assert "acme/two" not in output

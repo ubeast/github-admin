@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections import Counter
+
 from rich.console import Console
 from rich.table import Table
 
@@ -24,6 +26,14 @@ def _flag_tri(ok: bool | None) -> str:
     return _flag(ok)
 
 
+def _primary_owner(results: list[RepoHealth]) -> str:
+    """The most-represented owner -- see render_dashboard._primary_owner
+    for why only non-primary-owner repos keep their owner/ prefix here.
+    """
+    counts = Counter(h.repo.owner for h in results)
+    return counts.most_common(1)[0][0] if counts else ""
+
+
 def render(results: list[RepoHealth], console: Console | None = None) -> None:
     """Print one table: worst (most issues) repos first."""
     if console is None:
@@ -33,14 +43,17 @@ def render(results: list[RepoHealth], console: Console | None = None) -> None:
             # display-width constraint, so don't cramp it to the 80-column
             # fallback rich uses when it can't detect a terminal size.
             console.width = 140
-    table = Table(title=f"github-admin -- {len(results)} repos")
+    primary_owner = _primary_owner(results)
+    title = f"github-admin -- {len(results)} repos" + (f" ({primary_owner})" if primary_owner else "")
+    table = Table(title=title)
 
     # repo names get a fixed, unwrapped column so they stay legible, capped
     # so one long name can't squeeze every other column's header down to an
     # unreadable ellipsis; each other column gets a min_width matching its
     # own header so headers never truncate. Full issue text (which checks
     # failed) is a count here, not the full list -- that goes in the HTML
-    # report, which has room for it.
+    # report, which has room for it. Repos owned by primary_owner show just
+    # their name, not owner/name -- see _primary_owner.
     table.add_column("repo", no_wrap=True, min_width=22, max_width=40)
     table.add_column("readme", justify="center", min_width=6)
     table.add_column("claude.md", justify="center", min_width=9)
@@ -55,7 +68,8 @@ def render(results: list[RepoHealth], console: Console | None = None) -> None:
 
     for h in results:
         r = h.repo
-        name = f"[dim]{r.full_name}[/dim]" if r.archived else r.full_name
+        display_name = r.name if r.owner == primary_owner else r.full_name
+        name = f"[dim]{display_name}[/dim]" if r.archived else display_name
         if r.platform != "github":
             name += f" [dim]({r.platform})[/dim]"
         if r.archived:
