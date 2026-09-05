@@ -39,8 +39,9 @@ CHECKS: list[tuple[str, str, str, str, str, str, _CheckFn]] = [
      lambda h: bool(h.repo.has_gitignore)),
     ("tests", "TS", "Tests", "a tests/ or test/ directory exists", "structure", "grid",
      lambda h: bool(h.repo.has_tests_dir)),
-    ("ci", "CI", "CI config", "a .github/ directory exists (Actions workflows)", "structure", "grid",
-     lambda h: bool(h.repo.has_ci_config)),
+    ("ci", "CI", "CI config",
+     "a CI config exists at the root (.github/ for GitHub Actions, .gitlab-ci.yml for GitLab CI)",
+     "structure", "grid", lambda h: bool(h.repo.has_ci_config)),
     ("contributors", "CN", "Contributors", "someone besides the owner has committed", "activity", "grid",
      lambda h: (h.repo.contributors or 0) > 1 or h.repo.is_fork),
     ("fresh", "AC", "Active", "pushed within the last 180 days", "activity", "grid",
@@ -160,6 +161,7 @@ def render(results: list[RepoHealth]) -> str:
         lic = _license_label(repo.license)
         contrib = repo.contributors if repo.contributors is not None else "?"
         fork_note = " &middot; fork" if repo.is_fork else ""
+        platform_note = f" &middot; {repo.platform}" if repo.platform != "github" else ""
         desc = escape(repo.description) if repo.description else '<span class="muted">no description</span>'
         topics_html = (
             "".join(f'<span class="topic">{escape(t)}</span>' for t in repo.topics[:4])
@@ -196,7 +198,7 @@ def render(results: list[RepoHealth]) -> str:
 <tr class="{_sev_class(n)}" data-name="{escape(repo.full_name.lower())}" data-gaps="{gap_keys}" data-excluded="{excluded_keys}" {sort_data}>
   <td class="stripe" aria-hidden="true"></td>
   <td class="col-repo">
-    <a class="repo-link" href="{escape(repo.url)}">{escape(repo.full_name)}</a>{fork_note}
+    <a class="repo-link" href="{escape(repo.url)}">{escape(repo.full_name)}</a>{fork_note}{platform_note}
     <div class="desc">{desc}</div>
   </td>
   <td class="col-checks">{grid_badges}</td>

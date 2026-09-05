@@ -2,10 +2,15 @@
 
 Standard-library only (``urllib``) -- no HTTP client dependency. Adapted from
 the ``fetch_github`` logic in ``one-file-tools/tools/repo-inventory/repo_inventory.py``,
-narrowed to GitHub only and to the fields this tool's health checks need.
-Unlike the source script (where the analogous fields are opt-in via
-``--full``), those fields are always fetched here -- they're the point of
-this tool.
+narrowed to the fields this tool's health checks need. Unlike the source
+script (where the analogous fields are opt-in via ``--full``), those fields
+are always fetched here -- they're the point of this tool.
+
+See ``gitlab_api.py`` for the GitLab equivalent -- a separate module (GitLab's
+auth, pagination, and endpoint shapes are different enough that sharing one
+client wasn't worth it), producing the same ``RepoInfo`` shape so nothing
+downstream (``health.py``, the renderers) needs to know which platform a
+repo came from.
 
 Speed tradeoff: three extra requests per repo beyond the single list-endpoint
 call -- one root-directory listing (``_root_listing``, which answers README /
@@ -40,7 +45,12 @@ class ApiError(RuntimeError):
 
 @dataclass(frozen=True)
 class RepoInfo:
-    """One GitHub repo, normalised to the fields health checks need.
+    """One repo (GitHub or GitLab), normalised to the fields health checks need.
+
+    Shared by both ``github_api.fetch_repos`` and ``gitlab_api.fetch_repos`` --
+    ``platform`` ("github" or "gitlab") is the only field that tells them
+    apart; everything else (``health.py``, the renderers) is written against
+    this one shape and never branches on platform.
 
     ``license`` is ``""`` when no license is detected. ``contributors`` and
     ``branch_protected`` are ``None`` only if the value could not be
@@ -66,6 +76,7 @@ class RepoInfo:
     has_pyproject: bool
     branch_protected: bool | None
     contributors: int | None
+    platform: str = "github"
     topics: list[str] = field(default_factory=list)
     language: str = ""
     stars: int = 0

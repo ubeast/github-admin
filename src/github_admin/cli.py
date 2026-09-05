@@ -1,4 +1,4 @@
-"""``github-admin`` CLI: consolidate your GitHub repos into one health-check view."""
+"""``github-admin`` CLI: consolidate your GitHub (and optionally GitLab) repos into one health-check view."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from typing import Annotated
 import typer
 from rich.console import Console
 
-from github_admin import github_api, health, render_dashboard, render_html, render_terminal
+from github_admin import github_api, gitlab_api, health, render_dashboard, render_html, render_terminal
 
 app = typer.Typer(add_completion=False, no_args_is_help=False)
 _err = Console(stderr=True)
@@ -26,6 +26,19 @@ def report(
     stale_days: Annotated[
         int, typer.Option(help="Flag repos with no push in this many days as stale.")
     ] = health.DEFAULT_STALE_DAYS,
+    gitlab: Annotated[
+        bool, typer.Option("--gitlab", help="Also fetch GitLab projects, alongside GitHub.")
+    ] = False,
+    gitlab_owner: Annotated[
+        str | None,
+        typer.Option(help="Only this GitLab user's public projects, instead of everything the token can see."),
+    ] = None,
+    gitlab_url: Annotated[
+        str, typer.Option(help="GitLab base URL, for self-managed instances.")
+    ] = gitlab_api.GITLAB_DEFAULT_URL,
+    gitlab_token_env: Annotated[
+        str, typer.Option(help="Env var holding the GitLab token.")
+    ] = "GITLAB_TOKEN",
     html: Annotated[
         Path | None, typer.Option(help="Also write a plain static HTML report to this path.")
     ] = None,
@@ -49,6 +62,21 @@ def report(
     except github_api.ApiError as exc:
         _err.print(f"[red]error:[/red] {exc}")
         raise typer.Exit(1) from exc
+
+    if gitlab:
+        gl_token = gitlab_api.resolve_token(gitlab_token_env)
+        if not gl_token and not gitlab_owner:
+            _err.print(
+                "[red]error:[/red] no GitLab token found -- set GITLAB_TOKEN or pass --gitlab-owner"
+            )
+            raise typer.Exit(1)
+        try:
+            repos += gitlab_api.fetch_repos(
+                token=gl_token, owner=gitlab_owner, base_url=gitlab_url, progress=progress
+            )
+        except gitlab_api.ApiError as exc:
+            _err.print(f"[red]error:[/red] {exc}")
+            raise typer.Exit(1) from exc
 
     results = health.check_all(repos, stale_days=stale_days)
     render_terminal.render(results)
