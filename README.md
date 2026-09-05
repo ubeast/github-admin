@@ -142,10 +142,3 @@ uv run repo-healthcheck --help
 ```bash
 uv run pytest
 ```
-
-## Roadmap
-
-This first pass is read-only: collect and display. A later iteration may add
-bulk-fix actions (e.g. apply a license, add topics) once it's clear from real
-usage what "fix" needs to support -- see the project's CLAUDE.md for why that
-decision is deferred rather than built in from the start.
