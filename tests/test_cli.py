@@ -3,15 +3,15 @@ from __future__ import annotations
 import pytest
 from typer.testing import CliRunner
 
-from github_admin import github_api
+from github_admin import github_api, gitlab_api
 from github_admin.cli import app
 from github_admin.github_api import RepoInfo
 
 runner = CliRunner()
 
 
-def _repo() -> RepoInfo:
-    return RepoInfo(
+def _repo(**overrides: object) -> RepoInfo:
+    defaults: dict[str, object] = dict(
         owner="octocat",
         name="widget",
         full_name="octocat/widget",
@@ -39,6 +39,8 @@ def _repo() -> RepoInfo:
         pushed="2024-01-01",
         url="https://github.com/octocat/widget",
     )
+    defaults.update(overrides)
+    return RepoInfo(**defaults)
 
 
 def test_report_prints_table(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -69,3 +71,29 @@ def test_report_writes_html(monkeypatch: pytest.MonkeyPatch, tmp_path: object) -
     assert result.exit_code == 0
     assert out_path.exists()
     assert "octocat/widget" in out_path.read_text()
+
+
+def test_report_merges_gitlab_when_requested(monkeypatch: pytest.MonkeyPatch) -> None:
+    gl_repo = _repo(
+        owner="myteam", name="widget", full_name="myteam/widget", platform="gitlab",
+        url="https://gitlab.com/myteam/widget",
+    )
+    monkeypatch.setattr(github_api, "resolve_token", lambda token_env="GITHUB_TOKEN": "fake-token")
+    monkeypatch.setattr(github_api, "fetch_repos", lambda **kwargs: [_repo()])
+    monkeypatch.setattr(gitlab_api, "resolve_token", lambda token_env="GITLAB_TOKEN": "fake-gl-token")
+    monkeypatch.setattr(gitlab_api, "fetch_repos", lambda **kwargs: [gl_repo])
+
+    result = runner.invoke(app, ["--gitlab"])
+    assert result.exit_code == 0
+    assert "octocat/widget" in result.output
+    assert "myteam/widget" in result.output
+
+
+def test_report_errors_without_gitlab_token(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(github_api, "resolve_token", lambda token_env="GITHUB_TOKEN": "fake-token")
+    monkeypatch.setattr(github_api, "fetch_repos", lambda **kwargs: [_repo()])
+    monkeypatch.setattr(gitlab_api, "resolve_token", lambda token_env="GITLAB_TOKEN": None)
+
+    result = runner.invoke(app, ["--gitlab"])
+    assert result.exit_code == 1
+    assert "no GitLab token found" in result.output

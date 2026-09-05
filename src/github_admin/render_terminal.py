@@ -56,6 +56,8 @@ def render(results: list[RepoHealth], console: Console | None = None) -> None:
     for h in results:
         r = h.repo
         name = f"[dim]{r.full_name}[/dim]" if r.archived else r.full_name
+        if r.platform != "github":
+            name += f" [dim]({r.platform})[/dim]"
         if r.archived:
             name += " [dim](archived)[/dim]"
         contributors = "?" if r.contributors is None else str(r.contributors)

@@ -81,10 +81,11 @@ def render(results: list[RepoHealth]) -> str:
         else:
             issue_text = f'<span class="issues">{escape("; ".join(h.issues))}</span>'
         archived_note = " (archived)" if r.archived else ""
+        platform_note = f" ({r.platform})" if r.platform != "github" else ""
 
         rows.append(
             f"<tr{row_class}>"
-            f'<td><a href="{escape(r.url)}">{escape(r.full_name)}</a>{archived_note}</td>'
+            f'<td><a href="{escape(r.url)}">{escape(r.full_name)}</a>{platform_note}{archived_note}</td>'
             f'<td class="center">{_flag(r.has_readme)}</td>'
             f'<td class="center">{_flag(r.has_claude_md)}</td>'
             f'<td class="center">{_flag_tri(r.branch_protected)}</td>'
