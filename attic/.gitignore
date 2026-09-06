@@ -1,0 +1,12 @@
+# Font files gen_social.py needs at runtime — fetched on demand, not tracked
+# (see gen_social.md for the download commands). ~700 KB, no reason to commit.
+IBMPlexSans.ttf
+IBMPlexMono-Regular.ttf
+
+# The raw AI-generated source concepts — ~3 MB of binaries, all with garbled
+# placeholder text, none shippable. Kept locally as visual reference only;
+# not worth putting in git history. The clean redraw
+# (introducing-repo-healthcheck-compressed.*) IS tracked.
+introducing-repo-healthcheck-full.png
+social-preview-with-side-image-compressed.png
+social-preview-with-side-image-full.png
