@@ -64,6 +64,13 @@ dev = [
 [tool.ruff]
 line-length = 130
 target-version = "py310"
+# attic/ is retired reference material, deliberately outside the package,
+# docs site, and CI (see attic/README.md). gen_social.py there is a one-off
+# image-generation script that doesn't follow -- and shouldn't be held to --
+# this project's lint rules. force-exclude so pre-commit / explicit paths
+# skip it too, not just `ruff check .`.
+extend-exclude = ["attic"]
+force-exclude = true
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
