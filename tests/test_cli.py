@@ -75,6 +75,21 @@ def test_report_writes_html(monkeypatch: pytest.MonkeyPatch, tmp_path: object) -
     assert "octocat/widget" in out_path.read_text()
 
 
+def test_report_writes_markdown(monkeypatch: pytest.MonkeyPatch, tmp_path: object) -> None:
+    from pathlib import Path
+
+    monkeypatch.setattr(github_api, "resolve_token", lambda token_env="GITHUB_TOKEN": "fake-token")
+    monkeypatch.setattr(github_api, "fetch_repos", lambda **kwargs: [_repo()])
+
+    out_path = Path(str(tmp_path)) / "report.md"
+    result = runner.invoke(app, ["--markdown", str(out_path)])
+    assert result.exit_code == 0
+    assert out_path.exists()
+    text = out_path.read_text()
+    assert text.startswith("# repo-healthcheck")
+    assert "octocat/widget" in text
+
+
 def test_report_merges_gitlab_when_requested(monkeypatch: pytest.MonkeyPatch) -> None:
     gl_repo = _repo(
         owner="myteam", name="widget", full_name="myteam/widget", platform="gitlab",

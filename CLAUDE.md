@@ -95,15 +95,23 @@ structure / staleness). See `README.md` for usage and the check list.
 - **Token resolution**: `GITHUB_TOKEN` env var first, then `gh auth token`
   as a fallback (`github_api.resolve_token`). Matches actually being logged
   in via the `gh` CLI already, rather than requiring a separate token setup.
-- **`render_dashboard.py` is a third renderer, not a replacement for
-  `render_html.py`.** `--html` stays a plain static table (every issue as
-  text, nothing to break, safe to diff/grep); `--dashboard` is the
-  interactive one (filter chips, multi-column sort) meant to actually be
-  used in a browser, not just read. Both consume the same `list[RepoHealth]`
-  -- no data-layer change needed to add a fourth. CSS/JS live as plain
-  (non-f-string) module-level constants (`_STYLE`, `_SCRIPT`) specifically
-  so they don't need every literal `{`/`}` escaped as `{{`/`}}`; only the
-  HTML body genuinely needs Python interpolation.
+- **There are four renderers, all consuming the same `list[RepoHealth]`**
+  (`render_terminal`, `render_html`, `render_markdown`, `render_dashboard`)
+  -- adding one has never needed a data-layer change, and adding a fifth
+  wouldn't either. They split by job, not by being replacements for each
+  other:
+  - `--html` and `--markdown` are the plain static ones (every issue spelled
+    out as text, nothing to break, safe to diff/grep/paste). `--markdown` is
+    the same worst-first table in Markdown so it drops into a GitHub/GitLab
+    issue, PR, or wiki page where the table renders natively.
+  - `--dashboard` is the interactive one (filter chips, multi-column sort),
+    meant to be used in a browser, not just read.
+  - In `render_html`/`render_dashboard`, CSS/JS live as plain (non-f-string)
+    module-level constants (`_STYLE`, `_SCRIPT`) so literal `{`/`}` don't
+    need escaping as `{{`/`}}`; only the HTML body needs Python interpolation.
+  - `_primary_owner` / `_flag` / `_flag_tri` are deliberately duplicated
+    across all four modules -- there's no shared utils module here (same
+    reasoning as the GitLab-client note above).
 - **`render_dashboard`'s CHECKS list is the single source of truth for the
   dashboard**, mirroring how `RepoInfo` is for the data layer: each entry
   is `(key, 2-letter code, label, criterion, group, "grid"|"badge",
@@ -161,6 +169,7 @@ src/repo_healthcheck/
   health.py            # RepoInfo -> RepoHealth (issues found), sorted worst-first
   render_terminal.py   # RepoHealth list -> rich table printed to stdout
   render_html.py       # RepoHealth list -> standalone static HTML string
+  render_markdown.py   # RepoHealth list -> plain Markdown string (same table)
   render_dashboard.py  # RepoHealth list -> standalone interactive HTML (filter + sort)
   cli.py                # typer entry point wiring the above together
 tests/

@@ -23,8 +23,11 @@ never get buried below healthy ones.
 
 <img src="https://raw.githubusercontent.com/ubeast/repo-healthcheck/main/docs/images/masthead.png" alt="repo-healthcheck dashboard header showing 12 repos audited, 5 with at least one gap, 2.8 average gaps per repo, and License as the most common gap" width="820">
 
-Two HTML export options:
+Three export options:
 
+- `--markdown report.md` -- the same worst-first table as plain Markdown, to
+  drop into a GitHub/GitLab issue, a PR description, a wiki page, or a status
+  doc (those platforms render the table natively).
 - `--html report.html` -- a plain static table, every issue spelled out as text.
 - `--dashboard report.html` -- an interactive page: a compact checklist per
   repo, click-to-filter chips (missing / has, multi-select), a "Forks only" /
@@ -59,8 +62,8 @@ it isn't confused with that account's repo of the same short name.
 | pyproject.toml | **Python repos only** -- no `pyproject.toml` at the root | without it there's no standard place for dependencies/tooling config, making the repo harder to set up or package |
 | stale | no push in `--stale-days` days (default 180) | long-untouched repos tend to have outdated dependencies and are the ones most likely to be forgotten entirely |
 
-`src/` layout is detected (`--html` shows it as a column) but never counted
-as an issue -- whether a repo should use one depends on its shape (a
+`src/` layout is detected (`--html` and `--markdown` show it as a column) but
+never counted as an issue -- whether a repo should use one depends on its shape (a
 deliberate single-file tool, like this project's own source `one-file-tools`,
 correctly skips it), which isn't something to auto-enforce.
 

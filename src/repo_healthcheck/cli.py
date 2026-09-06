@@ -8,7 +8,15 @@ from typing import Annotated
 import typer
 from rich.console import Console
 
-from repo_healthcheck import github_api, gitlab_api, health, render_dashboard, render_html, render_terminal
+from repo_healthcheck import (
+    github_api,
+    gitlab_api,
+    health,
+    render_dashboard,
+    render_html,
+    render_markdown,
+    render_terminal,
+)
 
 app = typer.Typer(add_completion=False, no_args_is_help=False)
 _err = Console(stderr=True)
@@ -41,6 +49,10 @@ def report(
     ] = "GITLAB_TOKEN",
     html: Annotated[
         Path | None, typer.Option(help="Also write a plain static HTML report to this path.")
+    ] = None,
+    markdown: Annotated[
+        Path | None,
+        typer.Option(help="Also write a plain Markdown report (same table) to this path."),
     ] = None,
     dashboard: Annotated[
         Path | None,
@@ -81,9 +93,16 @@ def report(
     results = health.check_all(repos, stale_days=stale_days)
     render_terminal.render(results)
 
+    if html is not None or markdown is not None or dashboard is not None:
+        _err.print()  # blank line between the table and the "wrote ..." notes
+
     if html is not None:
         html.write_text(render_html.render(results), encoding="utf-8")
-        _err.print(f"\n[dim]wrote {html}[/dim]")
+        _err.print(f"[dim]wrote {html}[/dim]")
+
+    if markdown is not None:
+        markdown.write_text(render_markdown.render(results), encoding="utf-8")
+        _err.print(f"[dim]wrote {markdown}[/dim]")
 
     if dashboard is not None:
         dashboard.write_text(render_dashboard.render(results), encoding="utf-8")
